@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuantMind 分析中</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="analysis-shell">
+      <a class="back-link" href="/">← 返回首页</a>
+      <section class="panel progress-panel">
+        <div>
+          <p class="eyebrow">Agent Workflow</p>
+          <h1 id="analysisTitle">正在准备分析...</h1>
+          <p id="statusText" class="subtitle">系统正在识别股票并启动多 Agent 工作流。</p>
+        </div>
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <ol class="steps" id="steps">
+          <li data-step="resolved">识别股票</li>
+          <li data-step="prepared">获取行情与新闻</li>
+          <li data-step="technical">技术分析 Agent</li>
+          <li data-step="news">新闻分析 Agent</li>
+          <li data-step="risk">风险控制 Agent</li>
+          <li data-step="decision">交易决策 Agent</li>
+        </ol>
+      </section>
+
+      <section id="resultPanel" class="results hidden">
+        <article class="panel decision-card">
+          <div class="card-heading">
+            <p class="eyebrow">Final Decision</p>
+            <span id="decisionBadge" class="badge">WAIT</span>
+          </div>
+          <h2 id="decisionSummary">等待最终结论</h2>
+          <div class="metric-grid">
+            <div><span>置信度</span><strong id="confidence">-</strong></div>
+            <div><span>建议仓位</span><strong id="positionSize">-</strong></div>
+            <div><span>决策来源</span><strong id="decisionSource">-</strong></div>
+            <div><span>分析日期</span><strong id="tradeDate">-</strong></div>
+          </div>
+          <p id="riskNotes" class="muted"></p>
+        </article>
+
+        <div class="detail-grid">
+          <article class="panel detail-card" id="technicalCard"></article>
+          <article class="panel detail-card" id="newsCard"></article>
+          <article class="panel detail-card" id="riskCard"></article>
+        </div>
+        <p id="disclaimer" class="disclaimer"></p>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

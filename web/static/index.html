@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuantMind Agent</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="hero-shell">
+      <section class="hero-card">
+        <p class="eyebrow">Multi-Agent Stock Intelligence</p>
+        <h1>QuantMind Agent</h1>
+        <p class="subtitle">输入 A 股或美股名称/代码，让四个 Agent 依次完成技术、新闻、风险与最终交易决策分析。</p>
+
+        <form id="searchForm" class="search-box">
+          <input
+            id="stockInput"
+            name="q"
+            type="text"
+            autocomplete="off"
+            placeholder="例如：贵州茅台 / 600519 / Apple / AAPL"
+          />
+          <button type="submit">开始分析</button>
+        </form>
+        <p id="errorText" class="error-text" aria-live="polite"></p>
+
+        <div class="examples">
+          <span>示例：</span>
+          <button data-query="贵州茅台">贵州茅台</button>
+          <button data-query="600519">600519</button>
+          <button data-query="AAPL">AAPL</button>
+          <button data-query="特斯拉">特斯拉</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
