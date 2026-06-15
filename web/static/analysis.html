@@ -49,16 +49,40 @@
           <p id="riskNotes" class="muted"></p>
         </article>
 
-        <div class="detail-grid">
-          <article class="panel detail-card" id="technicalCard"></article>
-          <article class="panel detail-card" id="newsCard"></article>
-          <article class="panel detail-card" id="fundamentalCard"></article>
-          <article class="panel detail-card" id="sentimentCard"></article>
-          <article class="panel detail-card" id="bullishResearchCard"></article>
-          <article class="panel detail-card" id="bearishResearchCard"></article>
-          <article class="panel detail-card" id="researchManagerCard"></article>
-          <article class="panel detail-card" id="riskCard"></article>
-        </div>
+        <section class="agent-section" id="marketSignalsSection">
+          <div class="section-heading">
+            <p class="eyebrow">Market Signals</p>
+            <h2>市场信号面板</h2>
+            <p class="section-subtitle">从行情、新闻、基本面与舆情四个角度汇总前置信号。</p>
+          </div>
+          <div class="detail-grid signal-grid">
+            <article class="panel detail-card agent-card agent-technical" id="technicalCard"></article>
+            <article class="panel detail-card agent-card agent-news" id="newsCard"></article>
+            <article class="panel detail-card agent-card agent-fundamental" id="fundamentalCard"></article>
+            <article class="panel detail-card agent-card agent-sentiment" id="sentimentCard"></article>
+          </div>
+        </section>
+
+        <section class="agent-section">
+          <div class="section-heading">
+            <p class="eyebrow">Research Debate</p>
+            <h2>研究员辩论</h2>
+            <p class="section-subtitle">多空研究员分别提出核心论点，再由研究经理给出综合裁决。</p>
+          </div>
+          <div class="debate-grid">
+            <article class="panel detail-card agent-card agent-bullish" id="bullishResearchCard"></article>
+            <article class="panel detail-card agent-card agent-bearish" id="bearishResearchCard"></article>
+          </div>
+          <article class="panel detail-card agent-card agent-manager manager-card" id="researchManagerCard"></article>
+        </section>
+
+        <section class="agent-section">
+          <div class="section-heading compact-heading">
+            <p class="eyebrow">Risk Control</p>
+            <h2>风险控制</h2>
+          </div>
+          <article class="panel detail-card agent-card agent-risk risk-card" id="riskCard"></article>
+        </section>
         <p id="disclaimer" class="disclaimer"></p>
       </section>
     </main>

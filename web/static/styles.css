@@ -325,7 +325,134 @@ button {
 
 .detail-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 
-.detail-card p { color: var(--muted); line-height: 1.65; }
+.agent-section {
+  display: grid;
+  gap: 16px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 8px;
+  padding: 4px 2px 2px;
+}
+
+.section-heading .eyebrow,
+.agent-header .eyebrow {
+  margin-bottom: 0;
+}
+
+.section-subtitle {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.compact-heading { gap: 4px; }
+
+.signal-grid,
+.debate-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.signal-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.debate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.agent-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+  border-color: rgba(163, 187, 218, 0.2);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    linear-gradient(145deg, var(--panel), rgba(9, 18, 32, 0.9));
+}
+
+.agent-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--agent-color, var(--brand)), transparent 78%);
+  opacity: 0.9;
+}
+
+.agent-card::after {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--agent-color, var(--brand)) 28%, transparent), transparent 68%);
+  pointer-events: none;
+}
+
+.agent-technical { --agent-color: #38d6b4; }
+.agent-news { --agent-color: #55a7ff; }
+.agent-fundamental { --agent-color: #a78bfa; }
+.agent-sentiment { --agent-color: #f6ad55; }
+.agent-bullish { --agent-color: #4ade80; }
+.agent-bearish { --agent-color: #fb7185; }
+.agent-manager { --agent-color: #facc15; }
+.agent-risk { --agent-color: #ff7a59; }
+
+.agent-header {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.agent-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid color-mix(in srgb, var(--agent-color, var(--brand)) 42%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--agent-color, var(--brand)) 16%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--agent-color, var(--brand)) 15%, transparent);
+  font-size: 22px;
+}
+
+.agent-tag {
+  max-width: 130px;
+  overflow: hidden;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--agent-color, var(--brand)) 35%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--agent-color, var(--brand)) 72%, #ffffff);
+  background: color-mix(in srgb, var(--agent-color, var(--brand)) 12%, transparent);
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-card p,
+.agent-summary {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.agent-summary {
+  position: relative;
+  z-index: 1;
+  margin: 14px 0 0;
+}
+
+.agent-summary.thesis {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #dceaff;
+}
 
 .detail-card h4 {
   margin: 18px 0 8px;
@@ -337,6 +464,128 @@ button {
   gap: 10px;
   flex-wrap: wrap;
   margin: 16px 0;
+}
+
+.metric-pills {
+  position: relative;
+  z-index: 1;
+}
+
+.metric-pills span {
+  display: grid;
+  gap: 4px;
+  min-width: 94px;
+  max-width: 100%;
+  padding: 11px 12px;
+}
+
+.metric-pills em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.metric-pills strong {
+  color: var(--text);
+  font-size: 15px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.insight-list,
+.chip-list,
+.summary-compare {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+}
+
+.insight-list h4,
+.chip-list h4 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.insight-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  line-height: 1.55;
+}
+
+.insight-item + .insight-item { margin-top: 8px; }
+.insight-item span {
+  flex: 0 0 auto;
+  max-width: 42%;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.insight-item strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.insight-item a { color: #9ccaff; text-decoration: none; }
+.insight-item a:hover { color: var(--text); }
+
+.chip-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-list span {
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--agent-color, var(--brand)) 26%, transparent);
+  border-radius: 999px;
+  color: #dceaff;
+  background: color-mix(in srgb, var(--agent-color, var(--brand)) 10%, transparent);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.summary-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-compare div {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.summary-compare span {
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.summary-compare p {
+  margin: 8px 0 0;
+}
+
+.manager-card,
+.risk-card {
+  margin-top: 16px;
+}
+
+.risk-card .metric-pills span {
+  min-width: 120px;
 }
 
 .plain-list {
@@ -356,5 +605,7 @@ button {
   .search-box { flex-direction: column; border-radius: 24px; }
   .search-box input { padding: 14px; }
   .agent-options { grid-template-columns: 1fr; }
-  .steps, .metric-grid, .detail-grid { grid-template-columns: 1fr; }
+  .steps, .metric-grid, .detail-grid, .signal-grid, .debate-grid, .summary-compare { grid-template-columns: 1fr; }
+  .agent-header { grid-template-columns: auto 1fr; }
+  .agent-tag { grid-column: 1 / -1; width: fit-content; max-width: 100%; }
 }

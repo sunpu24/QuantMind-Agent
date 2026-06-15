@@ -189,19 +189,18 @@ function toggleCard(selector, visible) {
 function renderTechnicalCard(report) {
   const indicators = report.indicators || {};
   $("#technicalCard").innerHTML = `
-    <p class="eyebrow">Technical Agent</p>
-    <h3>技术分析</h3>
-    <div class="mini-metrics">
-      <span>趋势：<strong>${escapeHtml(report.signal || "-")}</strong></span>
-      <span>评分：<strong>${escapeHtml(report.score ?? "-")}</strong></span>
-    </div>
-    <p>${escapeHtml(report.summary || "暂无技术分析摘要")}</p>
-    <ul class="plain-list">
-      <li>最新价：${escapeHtml(indicators.latest ?? "-")}</li>
-      <li>MA5：${escapeHtml(indicators.ma5 ?? "-")}</li>
-      <li>MA10：${escapeHtml(indicators.ma10 ?? "-")}</li>
-      <li>成交量变化：${formatPercent(indicators.volume_change)}</li>
-    </ul>
+    ${renderAgentHeader("📈", "Technical Agent", "技术分析", report.signal || "-")}
+    ${renderMetricPills([
+      ["趋势", report.signal || "-"],
+      ["评分", report.score ?? "-"],
+    ])}
+    <p class="agent-summary">${escapeHtml(report.summary || "暂无技术分析摘要")}</p>
+    ${renderInsightList([
+      ["最新价", indicators.latest ?? "-"],
+      ["MA5", indicators.ma5 ?? "-"],
+      ["MA10", indicators.ma10 ?? "-"],
+      ["成交量变化", formatPercent(indicators.volume_change)],
+    ], "行情指标")}
   `;
 }
 
@@ -214,108 +213,140 @@ function renderNewsCard(report, newsData = []) {
   );
   const noNews = headlines.length === 0 && report.summary === "没有找到相关的新闻";
   const headlineItems = noNews
-    ? '<li>没有找到相关的新闻</li>'
-    : headlines.map((title) => renderNewsHeadline(title, newsByTitle.get(String(title)))).join("") || "<li>没有找到相关的新闻</li>";
+    ? '<div class="insight-item">没有找到相关的新闻</div>'
+    : headlines.map((title) => renderNewsHeadline(title, newsByTitle.get(String(title)))).join("") || '<div class="insight-item">没有找到相关的新闻</div>';
   $("#newsCard").innerHTML = `
-    <p class="eyebrow">News Agent</p>
-    <h3>新闻分析</h3>
-    <div class="mini-metrics">
-      <span>情绪：<strong>${escapeHtml(report.sentiment || "-")}</strong></span>
-      <span>评分：<strong>${escapeHtml(report.score ?? "-")}</strong></span>
-    </div>
-    <p>${escapeHtml(report.summary || "暂无新闻分析摘要")}</p>
-    <ul class="plain-list">${headlineItems}</ul>
+    ${renderAgentHeader("📰", "News Agent", "新闻分析", report.sentiment || "-")}
+    ${renderMetricPills([
+      ["情绪", report.sentiment || "-"],
+      ["评分", report.score ?? "-"],
+    ])}
+    <p class="agent-summary">${escapeHtml(report.summary || "暂无新闻分析摘要")}</p>
+    <div class="insight-list"><h4>新闻线索</h4>${headlineItems}</div>
   `;
 }
 
 function renderNewsHeadline(title, metadata) {
   const safeTitle = escapeHtml(title);
   const url = metadata && metadata.url ? String(metadata.url) : "";
-  if (!url) return `<li>${safeTitle}</li>`;
-  return `<li><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${safeTitle}</a></li>`;
+  if (!url) return `<div class="insight-item">${safeTitle}</div>`;
+  return `<div class="insight-item"><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${safeTitle}</a></div>`;
 }
 
 function renderFundamentalCard(report) {
   const metrics = report.metrics || {};
   $("#fundamentalCard").innerHTML = `
-    <p class="eyebrow">Fundamental Agent</p>
-    <h3>基本面分析</h3>
-    <div class="mini-metrics">
-      <span>信号：<strong>${escapeHtml(report.signal || "-")}</strong></span>
-      <span>评分：<strong>${escapeHtml(report.score ?? "-")}</strong></span>
-      <span>来源：<strong>${escapeHtml(report.data_source || "-")}</strong></span>
-    </div>
-    <p>${escapeHtml(report.summary || "暂无基本面分析摘要")}</p>
-    <ul class="plain-list">${renderKeyValueItems(metrics, "暂无财务指标")}</ul>
+    ${renderAgentHeader("🏦", "Fundamental Agent", "基本面分析", report.signal || "-")}
+    ${renderMetricPills([
+      ["信号", report.signal || "-"],
+      ["评分", report.score ?? "-"],
+      ["来源", report.data_source || "-"],
+    ])}
+    <p class="agent-summary">${escapeHtml(report.summary || "暂无基本面分析摘要")}</p>
+    ${renderInsightList(Object.entries(metrics || {}), "财务指标", "暂无财务指标")}
   `;
 }
 
 function renderSentimentCard(report) {
   const sources = report.sources || [];
-  const sourceItems = sources.map((source) => `<li>${escapeHtml(source)}</li>`).join("") || "<li>暂无舆情来源</li>";
   $("#sentimentCard").innerHTML = `
-    <p class="eyebrow">Sentiment Agent</p>
-    <h3>舆情分析</h3>
-    <div class="mini-metrics">
-      <span>情绪：<strong>${escapeHtml(report.sentiment || "-")}</strong></span>
-      <span>评分：<strong>${escapeHtml(report.score ?? "-")}</strong></span>
-      <span>热度：<strong>${escapeHtml(report.buzz_score ?? "-")}</strong></span>
-      <span>分歧：<strong>${escapeHtml(report.disagreement_score ?? "-")}</strong></span>
-    </div>
-    <p>${escapeHtml(report.summary || "暂无舆情分析摘要")}</p>
-    <ul class="plain-list">${sourceItems}</ul>
+    ${renderAgentHeader("💬", "Sentiment Agent", "舆情分析", report.sentiment || "-")}
+    ${renderMetricPills([
+      ["情绪", report.sentiment || "-"],
+      ["评分", report.score ?? "-"],
+      ["热度", report.buzz_score ?? "-"],
+      ["分歧", report.disagreement_score ?? "-"],
+    ])}
+    <p class="agent-summary">${escapeHtml(report.summary || "暂无舆情分析摘要")}</p>
+    ${renderChipList(sources, "舆情来源", "暂无舆情来源")}
   `;
 }
 
 function renderResearchPerspectiveCard(selector, eyebrow, title, report) {
+  const isBullish = selector.includes("bullish");
   $(selector).innerHTML = `
-    <p class="eyebrow">${escapeHtml(eyebrow)}</p>
-    <h3>${escapeHtml(title)}</h3>
-    <div class="mini-metrics">
-      <span>立场：<strong>${escapeHtml(report.stance || "-")}</strong></span>
-      <span>置信度：<strong>${formatPercent(report.confidence)}</strong></span>
-    </div>
-    <p>${escapeHtml(report.thesis || "暂无研究观点")}</p>
-    <h4>关键要点</h4>
-    <ul class="plain-list">${renderListItems(report.key_points || [], "暂无关键要点")}</ul>
-    <h4>关注风险</h4>
-    <ul class="plain-list">${renderListItems(report.concerns || [], "暂无关注风险")}</ul>
+    ${renderAgentHeader(isBullish ? "🐂" : "🐻", eyebrow, title, report.stance || "-")}
+    ${renderMetricPills([
+      ["立场", report.stance || "-"],
+      ["置信度", formatPercent(report.confidence)],
+    ])}
+    <p class="agent-summary thesis">${escapeHtml(report.thesis || "暂无研究观点")}</p>
+    ${renderChipList(report.key_points || [], "关键要点", "暂无关键要点")}
+    ${renderInsightList((report.concerns || []).map((value) => ["风险", value]), "关注风险", "暂无关注风险")}
   `;
 }
 
 function renderResearchManagerCard(report) {
   $("#researchManagerCard").innerHTML = `
-    <p class="eyebrow">Research Manager Agent</p>
-    <h3>研究经理结论</h3>
-    <div class="mini-metrics">
-      <span>结论：<strong>${escapeHtml(report.conclusion || "-")}</strong></span>
-      <span>置信度：<strong>${formatPercent(report.confidence)}</strong></span>
+    ${renderAgentHeader("🧭", "Research Manager Agent", "研究经理结论", report.conclusion || "-")}
+    ${renderMetricPills([
+      ["结论", report.conclusion || "-"],
+      ["置信度", formatPercent(report.confidence)],
+    ])}
+    <p class="agent-summary thesis">${escapeHtml(report.final_summary || "暂无研究经理结论")}</p>
+    <div class="summary-compare">
+      <div><span>多头摘要</span><p>${escapeHtml(report.bullish_summary || "-")}</p></div>
+      <div><span>空头摘要</span><p>${escapeHtml(report.bearish_summary || "-")}</p></div>
     </div>
-    <p>${escapeHtml(report.final_summary || "暂无研究经理结论")}</p>
-    <ul class="plain-list">
-      <li>多头摘要：${escapeHtml(report.bullish_summary || "-")}</li>
-      <li>空头摘要：${escapeHtml(report.bearish_summary || "-")}</li>
-    </ul>
-    <h4>关键证据</h4>
-    <ul class="plain-list">${renderListItems(report.key_evidence || [], "暂无关键证据")}</ul>
+    ${renderChipList(report.key_evidence || [], "关键证据", "暂无关键证据")}
   `;
 }
 
 function renderRiskCard(report) {
   $("#riskCard").innerHTML = `
-    <p class="eyebrow">Risk Agent</p>
-    <h3>风险控制</h3>
-    <div class="mini-metrics">
-      <span>等级：<strong>${escapeHtml(report.level || "-")}</strong></span>
-      <span>评分：<strong>${escapeHtml(report.score ?? "-")}</strong></span>
-    </div>
-    <p>${escapeHtml(report.summary || "暂无风险控制摘要")}</p>
-    <ul class="plain-list">
-      <li>建议仓位：${formatPercent(report.suggested_position)}</li>
-      <li>止损建议：${formatPercent(report.stop_loss_pct)}</li>
-      <li>来源：${escapeHtml(report.risk_source || "-")}</li>
-    </ul>
+    ${renderAgentHeader("🛡️", "Risk Agent", "风险控制", report.level || "-")}
+    ${renderMetricPills([
+      ["等级", report.level || "-"],
+      ["评分", report.score ?? "-"],
+      ["建议仓位", formatPercent(report.suggested_position)],
+      ["止损建议", formatPercent(report.stop_loss_pct)],
+      ["来源", report.risk_source || "-"],
+    ])}
+    <p class="agent-summary thesis">${escapeHtml(report.summary || "暂无风险控制摘要")}</p>
   `;
+}
+
+function renderAgentHeader(icon, eyebrow, title, tag) {
+  return `
+    <div class="agent-header">
+      <div class="agent-icon">${escapeHtml(icon)}</div>
+      <div>
+        <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+        <h3>${escapeHtml(title)}</h3>
+      </div>
+      <span class="agent-tag">${escapeHtml(formatDisplayValue(tag))}</span>
+    </div>
+  `;
+}
+
+function renderMetricPills(items) {
+  return `
+    <div class="mini-metrics metric-pills">
+      ${items.map(([label, value]) => `
+        <span><em>${escapeHtml(label)}</em><strong>${escapeHtml(formatDisplayValue(value))}</strong></span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderInsightList(items, title, emptyText = "暂无内容") {
+  const rows = (items || []).filter(Boolean);
+  const content = rows.length === 0
+    ? `<div class="insight-item">${escapeHtml(emptyText)}</div>`
+    : rows.map(([label, value]) => `
+        <div class="insight-item">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(formatDisplayValue(value))}</strong>
+        </div>
+      `).join("");
+  return `<div class="insight-list"><h4>${escapeHtml(title)}</h4>${content}</div>`;
+}
+
+function renderChipList(values, title, emptyText = "暂无内容") {
+  const chips = values && values.length > 0
+    ? values.map((value) => `<span>${escapeHtml(formatDisplayValue(value))}</span>`).join("")
+    : `<span>${escapeHtml(emptyText)}</span>`;
+  return `<div class="chip-list"><h4>${escapeHtml(title)}</h4><div>${chips}</div></div>`;
 }
 
 function renderKeyValueItems(values, emptyText) {
