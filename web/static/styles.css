@@ -63,6 +63,17 @@ h1 { font-size: clamp(36px, 7vw, 72px); }
 h2 { font-size: clamp(24px, 4vw, 38px); }
 h3 { font-size: 22px; }
 
+.hero-card h1 {
+  display: grid;
+  gap: 4px;
+  font-size: clamp(44px, 7vw, 72px);
+}
+
+.hero-card h1 span {
+  display: block;
+  white-space: nowrap;
+}
+
 .subtitle {
   color: var(--muted);
   font-size: 17px;
@@ -106,6 +117,51 @@ button {
 .error-text {
   min-height: 24px;
   color: var(--danger);
+}
+
+.agent-selector {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.045);
+  text-align: left;
+}
+
+.agent-selector-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.agent-selector-heading small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.agent-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.agent-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+}
+
+.agent-options input {
+  accent-color: var(--brand);
 }
 
 .examples {
@@ -161,29 +217,59 @@ button {
 
 .steps {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
 .steps li {
-  padding: 12px;
-  border-radius: 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 16px 12px 44px;
+  border-radius: 14px;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid var(--border);
   font-size: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.steps li::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(159, 177, 199, 0.35);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.035);
 }
 
 .steps li.done {
   color: var(--text);
   border-color: rgba(56, 214, 180, 0.5);
+  background: rgba(56, 214, 180, 0.09);
+}
+
+.steps li.done::before {
+  background: var(--brand);
+  box-shadow: 0 0 0 4px rgba(56, 214, 180, 0.14);
 }
 
 .steps li.active {
+  color: var(--text);
+  border-color: rgba(85, 167, 255, 0.65);
+  background: linear-gradient(90deg, rgba(56, 214, 180, 0.15), rgba(85, 167, 255, 0.1));
   box-shadow: 0 0 0 3px rgba(56, 214, 180, 0.12);
+}
+
+.steps li.active::before {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 0 0 4px rgba(85, 167, 255, 0.16), 0 0 18px rgba(56, 214, 180, 0.42);
 }
 
 .results {
@@ -237,9 +323,14 @@ button {
 .metric-grid span, .muted, .disclaimer { color: var(--muted); }
 .metric-grid strong { display: block; margin-top: 6px; font-size: 20px; }
 
-.detail-grid { grid-template-columns: repeat(3, 1fr); }
+.detail-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 
 .detail-card p { color: var(--muted); line-height: 1.65; }
+
+.detail-card h4 {
+  margin: 18px 0 8px;
+  color: var(--text);
+}
 
 .mini-metrics {
   display: flex;
@@ -261,7 +352,9 @@ button {
 
 @media (max-width: 860px) {
   .hero-card { padding: 32px 20px; }
+  .hero-card h1 { font-size: clamp(38px, 13vw, 56px); }
   .search-box { flex-direction: column; border-radius: 24px; }
   .search-box input { padding: 14px; }
+  .agent-options { grid-template-columns: 1fr; }
   .steps, .metric-grid, .detail-grid { grid-template-columns: 1fr; }
 }

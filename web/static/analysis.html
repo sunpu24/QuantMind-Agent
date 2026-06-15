@@ -9,7 +9,7 @@
   <body>
     <main class="analysis-shell">
       <a class="back-link" href="/">← 返回首页</a>
-      <section class="panel progress-panel">
+      <section id="progressPanel" class="panel progress-panel">
         <div>
           <p class="eyebrow">Agent Workflow</p>
           <h1 id="analysisTitle">正在准备分析...</h1>
@@ -20,9 +20,14 @@
         </div>
         <ol class="steps" id="steps">
           <li data-step="resolved">识别股票</li>
-          <li data-step="prepared">获取行情与新闻</li>
+          <li data-step="prepared">获取行情、新闻与基本面</li>
           <li data-step="technical">技术分析 Agent</li>
           <li data-step="news">新闻分析 Agent</li>
+          <li data-step="fundamental">基本面分析 Agent</li>
+          <li data-step="sentiment">舆情分析 Agent</li>
+          <li data-step="bullish_research">多头研究员 Agent</li>
+          <li data-step="bearish_research">空头研究员 Agent</li>
+          <li data-step="research_manager">研究经理 Agent</li>
           <li data-step="risk">风险控制 Agent</li>
           <li data-step="decision">交易决策 Agent</li>
         </ol>
@@ -47,6 +52,11 @@
         <div class="detail-grid">
           <article class="panel detail-card" id="technicalCard"></article>
           <article class="panel detail-card" id="newsCard"></article>
+          <article class="panel detail-card" id="fundamentalCard"></article>
+          <article class="panel detail-card" id="sentimentCard"></article>
+          <article class="panel detail-card" id="bullishResearchCard"></article>
+          <article class="panel detail-card" id="bearishResearchCard"></article>
+          <article class="panel detail-card" id="researchManagerCard"></article>
           <article class="panel detail-card" id="riskCard"></article>
         </div>
         <p id="disclaimer" class="disclaimer"></p>

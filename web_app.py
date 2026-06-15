@@ -53,7 +53,12 @@ def validate_symbol(q: str = Query(..., min_length=1)) -> JSONResponse:
 
 
 @app.get("/api/analyze/stream")
-def analyze_stream(q: str = Query(..., min_length=1)) -> StreamingResponse:
+def analyze_stream(
+    q: str = Query(..., min_length=1),
+    agents: str | None = Query(default=None),
+) -> StreamingResponse:
+    selected_agents = _parse_agents_query(agents)
+
     def event_generator():
         try:
             resolved = resolve_symbol(q)
@@ -69,7 +74,7 @@ def analyze_stream(q: str = Query(..., min_length=1)) -> StreamingResponse:
 
             workflow = QuantMindWorkflow()
             trade_date = date.today().strftime("%Y-%m-%d")
-            for event in workflow.run_with_progress(resolved.symbol, trade_date):
+            for event in workflow.run_with_progress(resolved.symbol, trade_date, selected_agents=selected_agents):
                 state = event["state"]
                 payload = {
                     "type": "progress",
@@ -101,6 +106,12 @@ def analyze_stream(q: str = Query(..., min_length=1)) -> StreamingResponse:
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+def _parse_agents_query(agents: str | None) -> list[str] | None:
+    if agents is None:
+        return None
+    return [agent.strip() for agent in agents.split(",") if agent.strip()]
+
+
 def _sse(payload: dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
@@ -115,8 +126,15 @@ def _state_to_response(state: AgentState) -> dict[str, Any]:
         "trade_date": state.trade_date,
         "market_data": state.market_data,
         "news_data": state.news_data,
+        "fundamental_data": state.fundamental_data,
+        "sentiment_data": state.sentiment_data,
         "technical_report": _serialize(state.technical_report),
         "news_report": _serialize(state.news_report),
+        "fundamental_report": _serialize(state.fundamental_report),
+        "sentiment_report": _serialize(state.sentiment_report),
+        "bullish_research_report": _serialize(state.bullish_research_report),
+        "bearish_research_report": _serialize(state.bearish_research_report),
+        "research_debate_report": _serialize(state.research_debate_report),
         "risk_report": _serialize(state.risk_report),
         "final_decision": _serialize(state.final_decision),
         "disclaimer": "本报告仅用于研究和学习，不构成任何投资建议；数据可能延迟、不完整或受第三方源影响，交易有风险，决策需谨慎。",

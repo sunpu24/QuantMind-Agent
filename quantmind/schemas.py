@@ -41,6 +41,44 @@ class NewsReport:
 
 
 @dataclass
+class FundamentalReport:
+    signal: Signal
+    score: int
+    summary: str
+    metrics: dict[str, Any] = field(default_factory=dict)
+    data_source: str = "rule"
+
+
+@dataclass
+class SentimentReport:
+    sentiment: Signal
+    score: int
+    buzz_score: int
+    disagreement_score: int
+    summary: str
+    sources: list[str] = field(default_factory=list)
+
+
+@dataclass
+class ResearchPerspectiveReport:
+    stance: Signal
+    confidence: float
+    thesis: str
+    key_points: list[str] = field(default_factory=list)
+    concerns: list[str] = field(default_factory=list)
+
+
+@dataclass
+class ResearchDebateReport:
+    conclusion: Signal
+    confidence: float
+    bullish_summary: str
+    bearish_summary: str
+    final_summary: str
+    key_evidence: list[str] = field(default_factory=list)
+
+
+@dataclass
 class RiskReport:
     level: RiskLevel
     score: int
@@ -74,7 +112,14 @@ class AgentState:
     trade_date: str
     market_data: dict[str, Any] = field(default_factory=dict)
     news_data: list[dict[str, Any]] = field(default_factory=list)
+    fundamental_data: dict[str, Any] = field(default_factory=dict)
+    sentiment_data: dict[str, Any] = field(default_factory=dict)
     technical_report: Optional[TechnicalReport] = None
     news_report: Optional[NewsReport] = None
+    fundamental_report: Optional[FundamentalReport] = None
+    sentiment_report: Optional[SentimentReport] = None
+    bullish_research_report: Optional[ResearchPerspectiveReport] = None
+    bearish_research_report: Optional[ResearchPerspectiveReport] = None
+    research_debate_report: Optional[ResearchDebateReport] = None
     risk_report: Optional[RiskReport] = None
     final_decision: Optional[TradeDecision] = None

@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from quantmind.llm.parsing import (
+    parse_fundamental_report_payload,
     parse_news_report_payload,
     parse_risk_report_payload,
     parse_technical_report_payload,
@@ -67,6 +68,36 @@ class LLMParsingTest(unittest.TestCase):
         self.assertEqual(report.signal, Signal.NEUTRAL)
         self.assertEqual(report.score, 0)
         self.assertEqual(report.summary, "DeepSeek 给出技术结构分析。")
+
+    def test_parse_fundamental_report_payload_uses_python_metrics(self) -> None:
+        metrics = {"roe": 0.2, "pe_ratio": 30}
+        report = parse_fundamental_report_payload(
+            {
+                "signal": "bullish",
+                "score": 120,
+                "summary": "LLM 基本面解释。",
+                "metrics": {"roe": 999},
+            },
+            metrics=metrics,
+            data_source="deepseek_guardrailed",
+        )
+
+        self.assertEqual(report.signal, Signal.BULLISH)
+        self.assertEqual(report.score, 100)
+        self.assertEqual(report.summary, "LLM 基本面解释。")
+        self.assertEqual(report.metrics, metrics)
+        self.assertEqual(report.data_source, "deepseek_guardrailed")
+
+    def test_parse_fundamental_report_defaults_invalid_signal(self) -> None:
+        report = parse_fundamental_report_payload(
+            {"signal": "optimistic", "score": -10},
+            metrics={},
+            data_source="rule",
+        )
+
+        self.assertEqual(report.signal, Signal.NEUTRAL)
+        self.assertEqual(report.score, 0)
+        self.assertEqual(report.summary, "DeepSeek 给出基本面分析。")
 
     def test_parse_risk_report_guardrails_position_and_stop_loss(self) -> None:
         rule_report = RiskReport(

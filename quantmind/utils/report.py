@@ -63,6 +63,24 @@ def _format_indicator_lines(indicators: dict[str, object]) -> list[str]:
     return lines
 
 
+def _format_mapping_lines(title: str, values: dict[str, object]) -> list[str]:
+    if not values:
+        return [f"{title}: {{}}"]
+    lines = [f"{title}:"]
+    for key, value in values.items():
+        lines.append(f"- {key}: {value}")
+    return lines
+
+
+def _format_list_lines(title: str, values: list[str]) -> list[str]:
+    if not values:
+        return [f"{title}: []"]
+    lines = [f"{title}:"]
+    for value in values:
+        lines.append(f"- {value}")
+    return lines
+
+
 def _clean_news_title(title: str) -> str:
     # 上游新闻偶尔会出现 “公司600519.SH)：” 这类缺少左括号的格式瑕疵。
     for suffix in (".SH)：", ".SZ)：", ".BJ)："):
@@ -146,6 +164,9 @@ def render_text_report(state: AgentState) -> str:
     market_data = state.market_data or {}
     data_source = market_data.get("source", "unknown")
     requested_provider = market_data.get("requested_provider", "unknown")
+    requested_trade_date = market_data.get("requested_trade_date")
+    actual_trade_date = market_data.get("actual_trade_date")
+    date_adjust_reason = market_data.get("date_adjust_reason")
     fallback_reason = market_data.get("fallback_reason")
     fallback_type = market_data.get("fallback_type")
     akshare_attempts = _format_akshare_attempts(market_data.get("akshare_attempts"))
@@ -155,6 +176,11 @@ def render_text_report(state: AgentState) -> str:
     news_fallback_reason = news_metadata.get("news_fallback_reason")
     news_fallback_type = news_metadata.get("news_fallback_type")
     news = state.news_report
+    fundamental = state.fundamental_report
+    sentiment = state.sentiment_report
+    bullish_research = state.bullish_research_report
+    bearish_research = state.bearish_research_report
+    research_debate = state.research_debate_report
     risk = state.risk_report
     decision = state.final_decision
 
@@ -174,6 +200,11 @@ def render_text_report(state: AgentState) -> str:
     date_note = _format_date_note(state.trade_date)
     if date_note:
         lines.append(date_note)
+    if requested_trade_date and actual_trade_date:
+        lines.append(f"请求行情日期: {requested_trade_date}")
+        lines.append(f"实际行情日期: {actual_trade_date}")
+    if date_adjust_reason:
+        lines.append(f"行情日期调整: {date_adjust_reason}")
     if _is_placeholder_market_data(market_data):
         lines.extend(
             [
@@ -209,6 +240,58 @@ def render_text_report(state: AgentState) -> str:
     ])
     for title in news.headlines if news else []:
         lines.append(_format_news_line(title, state.news_data))
+
+    lines.extend([
+        "",
+        "[基本面分析]",
+        f"信号: {fundamental.signal.value if fundamental else 'N/A'}",
+        f"评分: {fundamental.score if fundamental else 'N/A'}",
+        f"数据来源: {fundamental.data_source if fundamental else 'N/A'}",
+        f"理由: {fundamental.summary if fundamental else 'N/A'}",
+    ])
+    lines.extend(_format_mapping_lines("财务指标", fundamental.metrics if fundamental else {}))
+
+    lines.extend([
+        "",
+        "[舆情分析]",
+        f"情绪: {sentiment.sentiment.value if sentiment else 'N/A'}",
+        f"评分: {sentiment.score if sentiment else 'N/A'}",
+        f"关注热度: {sentiment.buzz_score if sentiment else 'N/A'}",
+        f"分歧程度: {sentiment.disagreement_score if sentiment else 'N/A'}",
+        f"理由: {sentiment.summary if sentiment else 'N/A'}",
+    ])
+    lines.extend(_format_list_lines("舆情来源", sentiment.sources if sentiment else []))
+
+    lines.extend([
+        "",
+        "[多头研究员观点]",
+        f"立场: {bullish_research.stance.value if bullish_research else 'N/A'}",
+        f"置信度: {bullish_research.confidence if bullish_research else 'N/A'}",
+        f"核心论点: {bullish_research.thesis if bullish_research else 'N/A'}",
+    ])
+    lines.extend(_format_list_lines("多头要点", bullish_research.key_points if bullish_research else []))
+    lines.extend(_format_list_lines("多头关注风险", bullish_research.concerns if bullish_research else []))
+
+    lines.extend([
+        "",
+        "[空头研究员观点]",
+        f"立场: {bearish_research.stance.value if bearish_research else 'N/A'}",
+        f"置信度: {bearish_research.confidence if bearish_research else 'N/A'}",
+        f"核心论点: {bearish_research.thesis if bearish_research else 'N/A'}",
+    ])
+    lines.extend(_format_list_lines("空头要点", bearish_research.key_points if bearish_research else []))
+    lines.extend(_format_list_lines("空头关注风险", bearish_research.concerns if bearish_research else []))
+
+    lines.extend([
+        "",
+        "[研究经理结论]",
+        f"结论: {research_debate.conclusion.value if research_debate else 'N/A'}",
+        f"置信度: {research_debate.confidence if research_debate else 'N/A'}",
+        f"多头摘要: {research_debate.bullish_summary if research_debate else 'N/A'}",
+        f"空头摘要: {research_debate.bearish_summary if research_debate else 'N/A'}",
+        f"最终摘要: {research_debate.final_summary if research_debate else 'N/A'}",
+    ])
+    lines.extend(_format_list_lines("关键证据", research_debate.key_evidence if research_debate else []))
 
     lines.extend([
         "",

@@ -1,0 +1,339 @@
+\documentclass[UTF8,a4paper,12pt]{ctexart}
+
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\geometry{left=2.8cm,right=2.8cm,top=2.6cm,bottom=2.6cm}
+\setstretch{1.35}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black
+}
+
+\newcommand{\swufelogo}{\includegraphics[width=10cm]{swufe_logo.jpg}}
+
+\title{QuantMind Agent：基于多 Agent 的股票辅助分析系统设计与实现}
+\author{孙溥、魏振邦\\西南财经大学 计算机与人工智能学院}
+\date{2025--2026学年第二学期}
+
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{0.9cm}
+\noindent\makebox[\textwidth][c]{\raisebox{-9cm}[0pt][0pt]{\swufelogo}}\par
+\vspace{-\baselineskip}
+{\zihao{0}\heiti 西南财经大学\par}
+\vspace{0.4cm}
+{\zihao{1} Southwestern University of Finance and Economics\par}
+\vspace{1.0cm}
+{\zihao{0}\heiti 课程论文\par}
+\vspace{3.5cm}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\heiti}r p{9cm}}
+学年学期： & 2025--2026--2 \\
+课程名称： & 数据可视化 \\
+论文题目： & QuantMind Agent：基于多 Agent 的股票辅助分析系统设计与实现 \\
+小组成员： & 孙溥、魏振邦 \\
+学院： & 计算机与人工智能学院 \\
+年级专业： & 23级计算机科学与技术 \\
+\end{tabular}
+\vfill
+{\zihao{4} \today\par}
+\end{titlepage}
+\renewcommand{\arraystretch}{1.15}
+
+\tableofcontents
+\newpage
+
+\begin{abstract}
+随着金融市场信息来源不断增多，投资者在进行股票分析时需要同时关注行情走势、技术指标、新闻信息和风险水平。传统单一规则模型虽然实现简单，但难以综合处理多维信息；而直接使用单个大语言模型进行判断，也可能存在信息混杂、推理过程不清晰和结果不稳定等问题。为此，本文设计并实现了 QuantMind Agent，一个面向股票辅助分析的多 Agent 系统。系统参考 TradingAgents 多 Agent 金融交易框架的思想，但结合课程项目规模和实际部署需求，采用更加轻量的串行 Agent 流程，即“技术分析 Agent、新闻分析 Agent、风险控制 Agent、交易决策 Agent”。系统后端基于 Python 与 FastAPI 实现，前端使用 HTML、CSS 和 JavaScript 构建交互页面，支持用户输入 A 股或美股名称及代码，并通过服务端事件推送展示分析进度。系统能够获取行情数据和新闻数据，计算 MA5、MA10、最新价格、成交量变化等指标，并结合新闻情绪和风险控制规则生成 BUY、HOLD、WAIT、SELL 等辅助决策结果。项目已部署至 Zeabur 平台，并在 GitHub 开源。实验结果表明，系统能够完成股票输入识别、Agent 流程执行、分析结果展示和异常数据安全回退等功能，具有一定的可解释性和实用价值。需要说明的是，本文系统仅用于课程研究和学习展示，不构成任何真实投资建议。
+
+\noindent\textbf{关键词：}多 Agent；大语言模型；股票分析；辅助交易决策；风险控制；数据可视化
+\end{abstract}
+
+\newpage
+
+\section{引言}
+
+\subsection{研究背景}
+
+股票市场受到公司基本面、市场情绪、宏观政策、行业新闻和资金行为等多种因素影响。普通投资者在进行股票分析时，通常需要同时查看价格走势、成交量变化、均线指标、新闻事件和风险水平。由于信息来源分散、数据类型多样，仅依靠人工阅读和经验判断容易出现分析效率低、判断依据不完整等问题。
+
+近年来，大语言模型在文本理解、摘要生成和推理分析方面表现出较强能力，为金融辅助分析提供了新的思路。与传统量化模型相比，大语言模型可以更自然地处理新闻、公告、研报等非结构化文本；与黑箱深度学习模型相比，基于语言模型的 Agent 系统能够输出较为清晰的自然语言解释。TradingAgents 等研究进一步提出，可以通过多个具有不同角色的 Agent 模拟真实交易机构中的分析师、交易员和风险控制团队，从而增强金融决策过程的结构化和可解释性。
+
+本文基于上述背景，设计并实现了 QuantMind Agent 系统。该系统不是自动化实盘交易平台，而是一个面向课程研究和学习展示的股票辅助分析系统。系统在线演示地址为\href{https://quantmind-agent.zeabur.app/}{https://quantmind-agent.zeabur.app/}，项目源代码地址为\href{https://github.com/sunpu24/QuantMind-Agent}{https://github.com/sunpu24/QuantMind-Agent}。
+
+\subsection{研究意义}
+
+本文研究具有以下意义。第一，从应用角度看，系统将行情数据、新闻信息、技术指标和风险控制整合到统一流程中，可以帮助用户更直观地理解一只股票当前的技术面和消息面情况。第二，从系统设计角度看，多 Agent 架构将复杂股票分析任务拆分为若干相对独立的模块，每个 Agent 负责一个明确任务，有利于提升系统的可维护性和可扩展性。第三，从数据可视化角度看，系统通过网页输入、进度条和结果卡片展示分析过程，使抽象的 Agent 决策流程变得更加直观。第四，从风险控制角度看，系统在数据不可用或回退到 Mock 数据时，会自动将最终交易建议降级为 WAIT，并将仓位设置为 0，从而避免基于不可靠数据给出过度明确的买卖建议。
+
+\subsection{研究内容}
+
+本文围绕 QuantMind Agent 系统展开，主要研究内容包括以下几个方面：
+
+第一，设计股票辅助分析系统的整体架构。系统包括前端交互页面、FastAPI 后端服务、股票输入识别模块、行情数据模块、新闻数据模块、多 Agent 工作流和结果展示模块。
+
+第二，实现轻量化多 Agent 分析流程。系统设置技术分析 Agent、新闻分析 Agent、风险控制 Agent 和交易决策 Agent 四个核心角色，按照固定串行流程依次执行。
+
+第三，实现行情与新闻数据处理。系统支持 AkShare、Tushare、Alpha Vantage 等数据源，同时保留 Mock 数据作为测试和异常回退方案。
+
+第四，实现风险控制与安全提示机制。系统通过风险评分、建议仓位、止损比例和 Mock 数据保护规则，降低辅助决策结果的误导风险。
+
+第五，实现 Web 可视化展示。系统通过网页展示股票输入、Agent 执行进度、最终交易决策和各 Agent 的分析详情。
+
+\subsection{论文结构安排}
+
+本文共分为五个部分。第一部分为引言，介绍研究背景、研究意义、研究内容和论文结构。第二部分为文献综述，介绍大语言模型在金融领域的应用、多 Agent 协作框架以及技术分析和新闻情绪分析相关研究。第三部分为研究设计，说明 QuantMind Agent 的系统需求、总体架构、Agent 流程、数据处理和 Web 展示设计。第四部分为实验分析，介绍实验环境、实验流程、功能测试和案例分析。第五部分为结论与展望，总结本文工作并说明系统不足和后续改进方向。
+
+\section{文献综述}
+
+\subsection{大语言模型在金融领域的应用}
+
+大语言模型能够处理大量自然语言文本，并在问答、摘要、分类和推理任务中表现出较强能力。在金融领域，相关研究主要集中在金融问答、财报分析、新闻摘要、情绪识别和金融信息抽取等方面。例如 BloombergGPT、FinGPT、PIXIU 等模型或框架通过金融语料训练、指令微调或金融任务评测，提升模型对金融术语、财务指标和市场文本的理解能力。
+
+这类研究表明，大语言模型可以作为金融分析助手，为用户提供信息整理和辅助判断能力。不过，仅将大语言模型作为单一问答工具仍存在一定局限。例如，模型可能缺少实时行情数据，或者在面对多源信息时难以保持稳定的结构化推理。因此，将大语言模型与外部数据源、规则系统和 Agent 流程结合，是提升金融应用可靠性的一种重要方向。
+
+\subsection{基于大语言模型的股票分析研究}
+
+在股票分析任务中，大语言模型不仅可以用于阅读新闻和公告，也可以结合行情指标、财务信息和市场情绪生成辅助判断。已有研究通常可以分为新闻驱动、推理驱动和回测反馈驱动等类型。新闻驱动方法主要使用新闻标题、正文或社交媒体信息判断市场情绪；推理驱动方法强调模型对不同信息的综合解释；回测反馈驱动方法则尝试根据历史交易结果优化模型输出。
+
+需要注意的是，股票市场具有较高不确定性，任何模型都难以保证预测准确。因此，在实际系统设计中，应避免将模型输出直接包装成确定性的投资建议，而应将其定位为辅助分析结果。本文系统在最终报告中明确加入免责声明，并通过 WAIT、仓位为 0、风险提示等方式降低误导风险。
+
+\subsection{多 Agent 协作框架研究}
+
+多 Agent 系统通过为不同 Agent 分配不同角色，将复杂任务拆解为多个子任务。TradingAgents 提出了一个面向金融交易的多 Agent 框架，模拟真实交易机构中的分析师团队、研究员团队、交易员、风险管理团队和基金经理审批流程。该框架的核心思想是让不同 Agent 从不同角度收集信息、展开讨论、控制风险并生成交易决策。
+
+本文系统参考了 TradingAgents 的角色分工思想，但没有完全复制其复杂结构。考虑到课程项目的实现难度、部署成本和展示需求，QuantMind Agent 采用轻量化的固定串行流程，将系统划分为技术分析、新闻分析、风险控制和交易决策四个核心 Agent。这种方式虽然没有实现复杂的多轮辩论机制，但能够清晰展示多 Agent 分工协作过程，也便于后续扩展。
+
+\subsection{技术分析与新闻情绪分析研究}
+
+技术分析是股票分析中的常见方法，主要根据价格、成交量和技术指标判断市场趋势。常见指标包括移动平均线、MACD、RSI、KDJ、布林带等。本文系统当前实现了较为基础但易解释的技术指标，包括 MA5、MA10、最新价格和成交量变化率。系统根据最新价格与均线之间的关系判断技术面偏强、偏弱或中性。
+
+新闻情绪分析则关注新闻事件对市场预期和投资者情绪的影响。公司公告、行业政策、宏观经济变化和负面事件都可能影响股票价格。大语言模型适合处理新闻标题和摘要，可以帮助系统提炼新闻重点并判断其潜在影响。本文系统通过新闻分析 Agent 对新闻标题、摘要和来源信息进行处理，并在无法获得真实新闻时明确提示“没有找到相关的新闻”或使用 Mock 回退提示。
+
+\subsection{文献评述}
+
+综上所述，已有研究说明大语言模型和多 Agent 协作机制在金融分析中具有较大潜力。TradingAgents 等框架展示了多角色协作在交易决策中的应用价值，但此类系统通常结构较复杂，完整复现和部署成本较高。与此同时，面向普通用户的轻量级股票辅助分析系统仍具有实践意义。基于此，本文结合 A 股和美股输入场景，设计并实现 QuantMind Agent 系统，通过四个核心 Agent 完成从数据获取、技术分析、新闻分析、风险控制到最终决策展示的完整流程。
+
+\section{研究设计}
+
+\subsection{系统需求分析}
+
+QuantMind Agent 的目标是实现一个可运行、可访问、可解释的股票辅助分析系统。根据项目目标，系统主要需求如下：
+
+\begin{enumerate}
+    \item 支持用户输入股票名称或股票代码，例如“贵州茅台”“600519”“Apple”“AAPL”等；
+    \item 支持获取行情数据和新闻数据，并能够在接口不可用时进行回退；
+    \item 支持技术分析、新闻分析、风险控制和最终交易决策；
+    \item 支持在网页中展示 Agent 执行进度和分析结果；
+    \item 支持数据可信度提示和风险保护，避免基于占位数据输出高置信交易建议；
+    \item 系统输出应具有可解释性，即不仅给出结果，还要给出依据和风险提示。
+\end{enumerate}
+
+\subsection{系统总体架构}
+
+系统整体采用前后端结合的结构。后端使用 Python 和 FastAPI 实现，负责股票识别、数据获取、Agent 工作流执行和接口输出；前端使用 HTML、CSS 和 JavaScript 实现，负责用户输入、进度展示和结果卡片渲染。系统部署在 Zeabur 平台，用户可以直接通过浏览器访问。
+
+系统总体流程如下：
+
+\begin{center}
+\begin{tabular}{c}
+用户输入股票名称或代码 \\
+$\downarrow$ \\
+股票识别与输入校验 \\
+$\downarrow$ \\
+行情数据获取与新闻数据获取 \\
+$\downarrow$ \\
+技术分析 Agent $\rightarrow$ 新闻分析 Agent $\rightarrow$ 风险控制 Agent $\rightarrow$ 交易决策 Agent \\
+$\downarrow$ \\
+生成结构化分析结果 \\
+$\downarrow$ \\
+Web 页面展示最终决策和各 Agent 报告
+\end{tabular}
+\end{center}
+
+\subsection{多 Agent 工作流程设计}
+
+系统核心工作流位于 \texttt{quantmind/graph/workflow.py}。在工作流开始时，系统首先创建 AgentState 状态对象，并写入股票代码、分析日期、行情数据和新闻数据。之后系统依次调用四个 Agent：技术分析 Agent、新闻分析 Agent、风险控制 Agent 和交易决策 Agent。
+
+该流程可以表示为：
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+步骤 & Agent & 主要任务 \\
+\midrule
+1 & 技术分析 Agent & 计算 MA5、MA10、最新价格、成交量变化，并判断技术趋势 \\
+2 & 新闻分析 Agent & 根据新闻标题和摘要判断新闻情绪 \\
+3 & 风险控制 Agent & 综合技术和新闻结果，输出风险等级、建议仓位和止损比例 \\
+4 & 交易决策 Agent & 综合前面报告，输出 BUY、HOLD、WAIT 或 SELL \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+与 TradingAgents 中复杂的多团队协作相比，本文系统采用固定串行流程，主要考虑到课程项目需要保证可运行性、可理解性和部署稳定性。后续如果继续扩展，可以在新闻分析和风险控制阶段加入多 Agent 辩论机制。
+
+\subsection{数据获取与处理设计}
+
+系统数据主要分为行情数据和新闻数据两类。行情数据可通过 AkShare 或 Tushare 获取，新闻数据可通过 AkShare 或 Alpha Vantage 获取。为了保证系统在外部接口不可用时仍能运行，项目保留 Mock 数据作为回退方案。
+
+在数据处理方面，系统会将行情数据整理为收盘价序列和成交量序列，供技术分析 Agent 计算指标。新闻数据则整理为标题、摘要、来源和链接等字段，供新闻分析 Agent 进行情绪判断。当前系统尤其重视数据可信度，如果数据源显示为 Mock 或 fallback Mock，最终交易决策 Agent 会触发保护逻辑，将最终动作降级为 WAIT，并将建议仓位设置为 0。
+
+\subsection{核心 Agent 模块设计}
+
+\subsubsection{技术分析 Agent}
+
+技术分析 Agent 位于 \texttt{quantmind/agents/technical\_agent.py}。该模块首先检查行情数据长度是否足够，如果不足，则输出中性判断。若数据满足要求，则计算 MA5、MA10、最新价格和成交量变化率。其基本判断逻辑为：当最新价格高于 MA5 且 MA5 高于 MA10 时，认为技术面偏强；当最新价格低于 MA5 且 MA5 低于 MA10 时，认为技术面偏弱；其他情况下认为技术面中性。如果价格趋势偏强且成交量明显放大，系统会进一步提高技术评分。
+
+\subsubsection{新闻分析 Agent}
+
+新闻分析 Agent 位于 \texttt{quantmind/agents/news\_agent.py}。该模块根据新闻标题和摘要判断新闻情绪。规则模式下，系统会统计标题中正面关键词和负面关键词的出现情况。正面关键词包括“增长”“利好”“突破”“回购”“增持”“盈利”“创新高”等，负面关键词包括“下滑”“利空”“处罚”“减持”“亏损”“风险”“调查”等。如果正面词更多，则新闻情绪偏多；如果负面词更多，则新闻情绪偏空；若没有明显差异，则新闻情绪为中性。
+
+\subsubsection{风险控制 Agent}
+
+风险控制 Agent 位于 \texttt{quantmind/agents/risk\_agent.py}。该模块综合技术分析和新闻分析结果计算风险评分。技术面偏多会降低风险评分，技术面偏空会提高风险评分；新闻面偏多会降低风险评分，新闻面偏空会提高风险评分。系统根据风险评分输出 low、medium、high 三类风险等级，并给出建议仓位和止损比例。该模块的作用是避免系统只关注买卖方向，而忽视仓位和风险约束。
+
+\subsubsection{交易决策 Agent}
+
+交易决策 Agent 位于 \texttt{quantmind/agents/decision\_agent.py}。该模块综合技术分析、新闻分析和风险控制报告，输出最终辅助决策。系统支持四类动作：BUY 表示买入或试探性建仓，HOLD 表示已有仓位继续持有但不新增买入，WAIT 表示观望等待，SELL 表示卖出或规避风险。当前系统没有真实持仓上下文，因此非 BUY 动作的仓位通常设置为 0。
+
+交易决策 Agent 还实现了重要的安全保护逻辑。当行情数据源包含 Mock 或 fallback 信息时，系统会将最终动作强制调整为 WAIT，置信度不超过 0.55，仓位为 0，并在摘要和风险提示中说明“未找到可用行情数据，无法基于真实行情给出买入或卖出判断”。
+
+\subsection{Web 系统设计}
+
+Web 后端位于 \texttt{web\_app.py}。系统提供三个主要接口：首页接口 \texttt{/}、股票校验接口 \texttt{/api/validate} 和流式分析接口 \texttt{/api/analyze/stream}。其中，\texttt{/api/analyze/stream} 使用 Server-Sent Events 技术向前端推送进度信息，使用户能够看到“已识别股票”“技术分析完成”“新闻分析完成”“风险控制完成”“最终决策生成”等过程。
+
+前端页面位于 \texttt{web/static/index.html} 和 \texttt{web/static/app.js}。首页提供股票输入框和示例按钮；分析页通过进度条展示 Agent 执行状态，并在分析完成后展示最终决策卡片、技术分析卡片、新闻分析卡片和风险控制卡片。最终决策优先展示，包括动作、置信度、建议仓位、分析日期、风险提示和免责声明。
+
+\subsection{风险控制与安全提示设计}
+
+股票分析系统如果缺少风险提示，容易造成用户误解。因此，QuantMind Agent 在多个层面加入安全设计。首先，系统在最终结果中明确说明报告仅用于研究和学习，不构成投资建议。其次，风险控制 Agent 会输出风险等级、建议仓位和止损比例。再次，当外部数据源不可用并回退到 Mock 数据时，系统会降低判断确信度，并强制最终决策为 WAIT。最后，LLM 调用失败时系统会回退到规则逻辑，保证系统不会因为模型接口异常而中断。
+
+\section{实验分析}
+
+\subsection{实验环境}
+
+本文系统在本地开发环境和线上部署环境中进行测试。本地开发环境为 Windows 11，主要使用 Python 作为后端开发语言，FastAPI 作为 Web 服务框架，HTML、CSS 和 JavaScript 作为前端页面技术。数据接口包括 AkShare、Tushare 和 Alpha Vantage，大语言模型接口预留 DeepSeek。线上部署平台为 Zeabur，用户可以通过浏览器访问系统演示页面。
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+项目 & 内容 \\
+\midrule
+后端语言 & Python \\
+Web 框架 & FastAPI \\
+前端技术 & HTML、CSS、JavaScript \\
+行情数据源 & AkShare、Tushare、Mock 回退 \\
+新闻数据源 & AkShare、Alpha Vantage、Mock 回退 \\
+LLM 接口 & DeepSeek，可失败回退到规则逻辑 \\
+部署平台 & Zeabur \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{实验对象与实验流程}
+
+为了验证系统功能，本文选取网页示例中常见的股票输入进行测试，包括“贵州茅台”“600519”“AAPL”和“特斯拉”等。系统支持股票名称和股票代码两种输入方式。若输入能够被识别，系统进入分析页面；若输入不支持，则前端提示当前内容不可查询。
+
+实验流程如下：首先，用户在首页输入股票名称或代码；其次，系统调用 \texttt{/api/validate} 接口进行股票识别；再次，系统进入分析页面并通过 \texttt{/api/analyze/stream} 接口执行多 Agent 工作流；最后，前端接收分析结果并展示最终决策和各 Agent 报告。
+
+\subsection{功能测试结果}
+
+系统功能测试主要围绕输入识别、Agent 执行、结果展示和异常保护四个方面展开。测试结果如表所示。
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+测试内容 & 预期结果 & 实际表现 \\
+\midrule
+股票输入识别 & 支持名称和代码输入 & 可识别 A 股和美股示例输入 \\
+进度展示 & 显示 Agent 执行过程 & 前端进度条按步骤更新 \\
+技术分析 & 输出技术趋势和指标 & 可展示 MA5、MA10、最新价和成交量变化 \\
+新闻分析 & 输出新闻情绪和标题 & 可展示新闻摘要或无相关新闻提示 \\
+风险控制 & 输出风险等级和仓位 & 可展示风险等级、建议仓位和止损比例 \\
+最终决策 & 输出 BUY/HOLD/WAIT/SELL & 可展示动作、置信度、仓位和风险提示 \\
+异常保护 & 数据不可用时安全回退 & Mock 数据触发 WAIT 和 0 仓位保护 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+从测试结果可以看出，系统能够完成课程项目所需的主要功能。用户可以通过网页输入股票，系统能够按顺序执行四个 Agent，并在页面上展示结构化结果。
+
+\subsection{案例分析}
+
+以“贵州茅台”或“600519”为例，用户在首页输入股票名称或代码后，系统首先将输入识别为对应股票代码，然后进入分析页面。页面显示分析进度，依次完成基础数据准备、技术分析、新闻分析、风险控制和最终决策。
+
+在技术分析阶段，系统根据最近价格序列计算 MA5、MA10、最新价格和成交量变化率。如果最新价格站上短期与中期均线，则系统倾向于给出偏多技术信号；如果跌破均线，则倾向于偏空；如果关系不明确，则保持中性。在新闻分析阶段，系统根据新闻标题和摘要判断新闻情绪，如果没有找到相关新闻，则明确说明“没有找到相关的新闻”，避免编造新闻依据。在风险控制阶段，系统综合技术和新闻结果给出风险等级和建议仓位。在最终决策阶段，系统综合三个报告输出 BUY、HOLD、WAIT 或 SELL，并给出置信度、仓位和风险提示。
+
+该案例体现了系统的两个特点。第一，分析过程是分步骤的，用户可以看到每个 Agent 的输出，而不是只看到一个最终结论。第二，系统结果具有可解释性，最终决策会同时展示技术依据、新闻依据和风险控制说明。
+
+\subsection{实验结果总结}
+
+实验表明，QuantMind Agent 能够完成从用户输入到结果展示的完整流程，适合作为课程项目中的股票辅助分析系统。系统优势主要体现在以下几个方面：一是多 Agent 分工明确，系统结构清晰；二是输出结果可解释，便于用户理解分析依据；三是 Web 页面操作简单，能够直观展示进度和结果；四是加入了 Mock 数据保护和风险提示，避免把测试数据误认为真实投资依据。
+
+同时，系统也存在一定不足。首先，当前系统不是完整的自动交易系统，也没有接入真实账户交易。其次，技术指标较为基础，尚未加入 MACD、RSI、KDJ 等更多指标。再次，系统回测能力还不完善，不能直接证明策略长期收益。最后，新闻和行情数据质量受第三方接口影响，外部接口异常时需要依赖回退机制。
+
+\section{结论与展望}
+
+\subsection{研究结论}
+
+本文设计并实现了 QuantMind Agent，一个基于多 Agent 的股票辅助分析系统。系统参考 TradingAgents 的多角色协作思想，但采用更轻量的固定串行流程，将股票分析过程划分为技术分析、新闻分析、风险控制和交易决策四个阶段。系统后端基于 Python 与 FastAPI 实现，前端基于 HTML、CSS 和 JavaScript 实现，并部署到 Zeabur 平台。用户可以通过网页输入股票名称或代码，系统自动执行分析流程并展示最终辅助决策结果。
+
+通过实验测试可以看出，系统能够完成股票输入识别、Agent 流程执行、进度展示、结果卡片渲染和异常数据保护等功能。与单一规则判断相比，多 Agent 结构使分析过程更加清晰；与直接输出买卖建议相比，系统增加了风险控制和免责声明，使结果更适合作为学习和研究用途。
+
+\subsection{研究不足}
+
+本文系统仍存在一些不足。第一，系统当前主要用于辅助分析，不具备自动交易能力，也没有接入真实交易账户。第二，技术分析指标较少，主要包括 MA5、MA10、最新价格和成交量变化率，指标体系仍有扩展空间。第三，回测功能不完善，尚不能从长期历史数据角度验证决策效果。第四，多 Agent 协作方式仍是固定串行流程，没有实现 TradingAgents 中更复杂的辩论和审批机制。第五，新闻和行情数据依赖第三方接口，接口稳定性会影响系统分析质量。
+
+\subsection{未来展望}
+
+后续可以从以下方向继续改进。首先，可以增加 MACD、RSI、KDJ、布林带等更多技术指标，使技术分析更加全面。其次，可以完善回测模块，支持对历史数据进行策略效果验证。再次，可以引入多 Agent 辩论机制，例如设置看多 Agent 和看空 Agent，使交易决策过程更加充分。第四，可以增强中文金融新闻情绪分析能力，提高 A 股场景下的新闻理解效果。第五，可以加入投资组合管理功能，从单只股票分析扩展到多资产配置分析。最后，可以继续优化 Web 页面交互体验，使系统更适合展示和教学使用。
+
+\newpage
+\begin{thebibliography}{99}
+
+\bibitem{tradingagents}
+Xiao Y., Sun E., Luo D., Wang W. TradingAgents: Multi-Agents LLM Financial Trading Framework[EB/OL]. arXiv:2412.20138, 2025.
+
+\bibitem{fingpt}
+Yang H., Liu X. Y., Wang C. D. FinGPT: Open-Source Financial Large Language Models[EB/OL]. arXiv:2306.06031, 2023.
+
+\bibitem{bloomberggpt}
+Wu S., Irsoy O., Lu S., et al. BloombergGPT: A Large Language Model for Finance[EB/OL]. arXiv:2303.17564, 2023.
+
+\bibitem{pixiu}
+Xie Q., Han W., Zhang X., et al. PIXIU: A Large Language Model, Instruction Data and Evaluation Benchmark for Finance[EB/OL]. arXiv:2306.05443, 2023.
+
+\bibitem{react}
+Yao S., Zhao J., Yu D., et al. ReAct: Synergizing Reasoning and Acting in Language Models[EB/OL]. arXiv:2210.03629, 2023.
+
+\bibitem{metagpt}
+Hong S., Zhuge M., Chen J., et al. MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework[EB/OL]. arXiv:2308.00352, 2024.
+
+\bibitem{lopez}
+Lopez-Lira A., Tang Y. Can ChatGPT Forecast Stock Price Movements? Return Predictability and Large Language Models[EB/OL]. arXiv:2304.07619, 2023.
+
+\bibitem{finmem}
+Yu Y., Li H., Chen Z., et al. FinMem: A Performance-Enhanced LLM Trading Agent with Layered Memory and Character Design[EB/OL]. arXiv:2311.13743, 2023.
+
+\bibitem{quantmindgithub}
+孙溥. QuantMind Agent 项目源代码[EB/OL]. \href{https://github.com/sunpu24/QuantMind-Agent}{https://github.com/sunpu24/QuantMind-Agent}.
+
+\bibitem{quantmindweb}
+孙溥. QuantMind Agent 在线演示系统[EB/OL]. \href{https://quantmind-agent.zeabur.app/}{https://quantmind-agent.zeabur.app/}.
+
+\end{thebibliography}
+
+\newpage
+\section*{致谢}
+感谢课程老师在数据可视化与系统设计方面的指导。本文项目在实现过程中参考了 TradingAgents 等多 Agent 金融分析研究的思想，并结合课程项目需求完成了轻量化实现。同时感谢开源社区提供的 FastAPI、AkShare、Tushare 等工具支持，使本系统能够完成从数据获取、Agent 分析到 Web 展示的完整流程。
+
+\end{document}

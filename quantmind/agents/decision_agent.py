@@ -107,6 +107,9 @@ class TradingDecisionAgent(BaseAgent):
     def _make_rule_decision(self, state: AgentState) -> TradeDecision:
         tech = state.technical_report
         news = state.news_report
+        fundamental = state.fundamental_report
+        sentiment = state.sentiment_report
+        research = state.research_debate_report
         risk = state.risk_report
 
         bullish_votes = 0
@@ -119,16 +122,28 @@ class TradingDecisionAgent(BaseAgent):
             bullish_votes += 1
         elif news and news.sentiment == Signal.BEARISH:
             bearish_votes += 1
+        if fundamental and fundamental.signal == Signal.BULLISH:
+            bullish_votes += 1
+        elif fundamental and fundamental.signal == Signal.BEARISH:
+            bearish_votes += 1
+        if sentiment and sentiment.sentiment == Signal.BULLISH:
+            bullish_votes += 1
+        elif sentiment and sentiment.sentiment == Signal.BEARISH:
+            bearish_votes += 1
+        if research and research.conclusion == Signal.BULLISH:
+            bullish_votes += 2
+        elif research and research.conclusion == Signal.BEARISH:
+            bearish_votes += 2
 
         high_risk = risk is not None and risk.level == RiskLevel.HIGH
         if bullish_votes > bearish_votes and not high_risk:
             action = TradeAction.BUY
-            confidence = 0.68 + bullish_votes * 0.06
-            summary = "技术面和/或新闻面偏正向，且风险未达到高风险区间，倾向买入或试探性建仓。"
+            confidence = 0.62 + bullish_votes * 0.05
+            summary = "技术、新闻、基本面、舆情或研究经理结论整体偏正向，且风险未达到高风险区间，倾向买入或试探性建仓。"
         elif bearish_votes > bullish_votes or high_risk:
             action = TradeAction.SELL
-            confidence = 0.66 + bearish_votes * 0.06
-            summary = "负面信号或风险水平较高，倾向卖出、减仓或暂不参与。"
+            confidence = 0.62 + bearish_votes * 0.05
+            summary = "负面信号、研究经理偏空或风险水平较高，倾向卖出、减仓或暂不参与。"
         else:
             action = TradeAction.WAIT
             confidence = 0.58
@@ -153,12 +168,18 @@ class TradingDecisionAgent(BaseAgent):
     def _build_prompt_summary(self, state: AgentState, rule_decision: TradeDecision) -> str:
         tech = state.technical_report
         news = state.news_report
+        fundamental = state.fundamental_report
+        sentiment = state.sentiment_report
+        research = state.research_debate_report
         risk = state.risk_report
         return (
             f"symbol={state.symbol}, date={state.trade_date}, "
             f"market_source={state.market_data.get('source', 'unknown')}, "
             f"tech={tech.signal.value if tech else 'N/A'}/{tech.score if tech else 'N/A'}, "
             f"news={news.sentiment.value if news else 'N/A'}/{news.score if news else 'N/A'}, "
+            f"fundamental={fundamental.signal.value if fundamental else 'N/A'}/{fundamental.score if fundamental else 'N/A'}, "
+            f"sentiment={sentiment.sentiment.value if sentiment else 'N/A'}/{sentiment.score if sentiment else 'N/A'}, "
+            f"research={research.conclusion.value if research else 'N/A'}/{research.confidence if research else 'N/A'}, "
             f"risk={risk.level.value if risk else 'N/A'}/{risk.score if risk else 'N/A'}, "
             f"rule={rule_decision.action.value}/{rule_decision.confidence}"
         )
@@ -196,6 +217,9 @@ class TradingDecisionAgent(BaseAgent):
     ) -> list[dict[str, str]]:
         tech = state.technical_report
         news = state.news_report
+        fundamental = state.fundamental_report
+        sentiment = state.sentiment_report
+        research = state.research_debate_report
         risk = state.risk_report
         news_meta = state.news_data[0] if state.news_data else {}
         return [
@@ -203,8 +227,10 @@ class TradingDecisionAgent(BaseAgent):
                 "role": "system",
                 "content": (
                     "你是 QuantMind 的交易决策 Agent。请只基于用户提供的结构化分析结果给出辅助交易决策，"
-                    "尤其只能依赖技术分析、新闻分析和风险控制报告，不要编造不存在的数据或新闻事实。"
+                    "尤其只能依赖技术分析、新闻分析、基本面分析、舆情分析、研究经理结论和风险控制报告，不要编造不存在的数据或新闻事实。"
+                    "兼容旧版约束：只能依赖技术分析、新闻分析和风险控制报告；新增基本面、舆情和研究经理结论也必须来自用户提供的结构化报告。"
                     f"当新闻分析 summary 为“{NO_RELEVANT_NEWS_SUMMARY}”时，新闻面必须按信息不足/中性处理。"
+                    "research_debate_report 是重要中间结论，但如果 risk_report 为 high，不能给出激进 BUY。"
                     "输出必须是严格 JSON 对象，不要包含 Markdown。"
                     f"{ACTION_RULES_TEXT}"
                 ),
@@ -221,14 +247,23 @@ class TradingDecisionAgent(BaseAgent):
                     f"summary={tech.summary if tech else 'N/A'}, indicators={tech.indicators if tech else {}}\n"
                     f"新闻分析: sentiment={news.sentiment.value if news else 'N/A'}, score={news.score if news else 'N/A'}, "
                     f"summary={news.summary if news else 'N/A'}, headlines={news.headlines if news else []}\n"
+                    f"基本面分析: signal={fundamental.signal.value if fundamental else 'N/A'}, score={fundamental.score if fundamental else 'N/A'}, "
+                    f"summary={fundamental.summary if fundamental else 'N/A'}, metrics={fundamental.metrics if fundamental else {}}, "
+                    f"data_source={fundamental.data_source if fundamental else 'N/A'}\n"
+                    f"舆情分析: sentiment={sentiment.sentiment.value if sentiment else 'N/A'}, score={sentiment.score if sentiment else 'N/A'}, "
+                    f"buzz_score={sentiment.buzz_score if sentiment else 'N/A'}, disagreement_score={sentiment.disagreement_score if sentiment else 'N/A'}, "
+                    f"summary={sentiment.summary if sentiment else 'N/A'}, sources={sentiment.sources if sentiment else []}\n"
+                    f"研究经理结论: conclusion={research.conclusion.value if research else 'N/A'}, confidence={research.confidence if research else 'N/A'}, "
+                    f"bullish_summary={research.bullish_summary if research else 'N/A'}, bearish_summary={research.bearish_summary if research else 'N/A'}, "
+                    f"final_summary={research.final_summary if research else 'N/A'}, key_evidence={research.key_evidence if research else []}\n"
                     f"风险控制: level={risk.level.value if risk else 'N/A'}, score={risk.score if risk else 'N/A'}, "
                     f"suggested_position={risk.suggested_position if risk else 0.0}, stop_loss_pct={risk.stop_loss_pct if risk else 0.0}, "
                     f"summary={risk.summary if risk else 'N/A'}\n"
                     f"规则基线决策: action={rule_decision.action.value}, confidence={rule_decision.confidence}, "
                     f"position_size={rule_decision.position_size}, summary={rule_decision.summary}\n\n"
                     f"{ACTION_RULES_TEXT}\n\n"
-                    f"约束: 最终决策只能依赖以上技术分析、新闻分析、风险控制三个报告；如果新闻分析为“{NO_RELEVANT_NEWS_SUMMARY}”，"
-                    "请把新闻面视为信息不足/中性，不得编造新闻。\n"
+                    f"约束: 最终决策只能依赖以上技术分析、新闻分析、基本面分析、舆情分析、研究经理结论、风险控制报告；如果新闻分析为“{NO_RELEVANT_NEWS_SUMMARY}”，"
+                    "请把新闻面视为信息不足/中性，不得编造新闻。research_debate_report 是重要中间结论；risk_report 为 high 时不能激进 BUY。\n"
                     "请返回 JSON，字段必须包含: "
                     "action(BUY/HOLD/WAIT/SELL), confidence(0到0.95), position_size(0到风险建议仓位), "
                     "summary(中文结论), reasoning(中文依据，说明如何权衡技术/新闻/风险), risk_notes(中文风险提示)。"

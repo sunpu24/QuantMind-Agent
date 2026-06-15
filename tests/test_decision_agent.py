@@ -6,9 +6,12 @@ from unittest.mock import patch
 from quantmind.agents.decision_agent import TradingDecisionAgent
 from quantmind.schemas import (
     AgentState,
+    FundamentalReport,
     NewsReport,
+    ResearchDebateReport,
     RiskLevel,
     RiskReport,
+    SentimentReport,
     Signal,
     TechnicalReport,
     TradeAction,
@@ -167,6 +170,69 @@ class TradingDecisionAgentTest(unittest.TestCase):
         self.assertIn("只能依赖技术分析、新闻分析和风险控制报告", combined)
         self.assertIn("没有找到相关的新闻", combined)
         self.assertIn("不得编造新闻", combined)
+
+    def test_rule_decision_uses_research_debate_as_important_signal(self) -> None:
+        agent = TradingDecisionAgent()
+        state = _state()
+        state.technical_report.signal = Signal.NEUTRAL
+        state.news_report.sentiment = Signal.NEUTRAL
+        state.fundamental_report = FundamentalReport(
+            signal=Signal.NEUTRAL,
+            score=50,
+            summary="基本面中性。",
+            metrics={},
+        )
+        state.sentiment_report = SentimentReport(
+            sentiment=Signal.NEUTRAL,
+            score=50,
+            buzz_score=20,
+            disagreement_score=20,
+            summary="舆情中性。",
+            sources=[],
+        )
+        state.research_debate_report = ResearchDebateReport(
+            conclusion=Signal.BULLISH,
+            confidence=0.75,
+            bullish_summary="多头证据更充分。",
+            bearish_summary="空头证据有限。",
+            final_summary="研究经理认为偏多。",
+            key_evidence=["研究经理 bullish"],
+        )
+
+        with patch("quantmind.agents.decision_agent.settings") as mock_settings:
+            mock_settings.llm_provider = "mock"
+            mock_settings.llm_model = "deepseek-chat"
+            result = agent.run(state)
+
+        self.assertEqual(result.final_decision.action, TradeAction.BUY)
+        self.assertIn("研究经理", result.final_decision.summary)
+
+    def test_high_risk_blocks_bullish_research_buy(self) -> None:
+        agent = TradingDecisionAgent()
+        state = _state()
+        state.research_debate_report = ResearchDebateReport(
+            conclusion=Signal.BULLISH,
+            confidence=0.82,
+            bullish_summary="多头证据更充分。",
+            bearish_summary="空头证据有限。",
+            final_summary="研究经理认为偏多。",
+            key_evidence=["研究经理 bullish"],
+        )
+        state.risk_report = RiskReport(
+            level=RiskLevel.HIGH,
+            score=82,
+            suggested_position=0.15,
+            stop_loss_pct=0.05,
+            summary="综合风险较高。",
+        )
+
+        with patch("quantmind.agents.decision_agent.settings") as mock_settings:
+            mock_settings.llm_provider = "mock"
+            mock_settings.llm_model = "deepseek-chat"
+            result = agent.run(state)
+
+        self.assertNotEqual(result.final_decision.action, TradeAction.BUY)
+        self.assertEqual(result.final_decision.position_size, 0.0)
 
 
 if __name__ == "__main__":

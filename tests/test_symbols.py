@@ -14,6 +14,7 @@ class SymbolResolveTest(unittest.TestCase):
     def test_resolves_a_share_code(self) -> None:
         resolved = resolve_symbol("600519.SH")
         self.assertEqual(resolved.symbol, "600519")
+        self.assertEqual(resolved.display_name, "贵州茅台")
         self.assertEqual(resolved.input_type, "a_share_code")
 
     def test_resolves_us_ticker(self) -> None:

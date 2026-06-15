@@ -66,6 +66,55 @@ class MarketDataProviderTest(unittest.TestCase):
         self.assertEqual(result["dates"][-1], "2026-05-14")
         self.assertEqual(result["close_prices"][0], 105.12)
         self.assertEqual(result["volumes"][-1], 10_024)
+        self.assertEqual(result["requested_trade_date"], "2026-05-14")
+        self.assertEqual(result["actual_trade_date"], "2026-05-14")
+        self.assertFalse(result["date_adjusted"])
+        self.assertIsNone(result["date_adjust_reason"])
+
+    def test_normalize_alpha_vantage_daily_bars_uses_recent_available_date_before_target(self) -> None:
+        payload = {
+            "Time Series (Daily)": {
+                "2026-05-10": {"4. close": "100.0", "5. volume": "10000"},
+                "2026-05-12": {"4. close": "101.0", "5. volume": "11000"},
+                "2026-05-16": {"4. close": "102.0", "5. volume": "12000"},
+            }
+        }
+        provider = MarketDataProvider()
+
+        result = provider._normalize_alpha_vantage_daily_bars("AAPL", "2026-05-14", payload)
+
+        self.assertEqual(result["dates"][-1], "2026-05-12")
+        self.assertEqual(result["actual_trade_date"], "2026-05-12")
+        self.assertTrue(result["date_adjusted"])
+        self.assertIn("2026-05-14", result["date_adjust_reason"])
+        self.assertIn("2026-05-12", result["date_adjust_reason"])
+
+    def test_fetch_alpha_vantage_daily_bars_uses_free_compact_outputsize(self) -> None:
+        provider = MarketDataProvider()
+        captured_url = ""
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return None
+
+            def read(self):
+                return b'{"Time Series (Daily)": {}}'
+
+        def fake_urlopen(url, timeout):
+            nonlocal captured_url
+            captured_url = url
+            return FakeResponse()
+
+        with patch("quantmind.data.market_data.settings") as mock_settings:
+            mock_settings.alpha_vantage_api_key = "demo"
+            mock_settings.alpha_vantage_timeout = 10
+            with patch("quantmind.data.market_data.urlopen", side_effect=fake_urlopen):
+                provider._fetch_alpha_vantage_daily_bars("AAPL")
+
+        self.assertIn("outputsize=compact", captured_url)
 
     def test_get_from_alpha_vantage_falls_back_when_api_key_missing(self) -> None:
         provider = MarketDataProvider()
@@ -120,6 +169,26 @@ class MarketDataProviderTest(unittest.TestCase):
         self.assertEqual(result["requested_provider"], "akshare")
         self.assertIsNone(result["fallback_reason"])
         self.assertIsNone(result["fallback_type"])
+        self.assertEqual(result["requested_trade_date"], "2026-05-14")
+        self.assertEqual(result["actual_trade_date"], "2026-05-14")
+        self.assertFalse(result["date_adjusted"])
+
+    def test_normalize_akshare_daily_bars_records_adjusted_actual_trade_date(self) -> None:
+        df = pd.DataFrame(
+            {
+                "日期": ["2026-05-10", "2026-05-12", "2026-05-16"],
+                "收盘": [100.0, 101.0, 102.0],
+                "成交量": [10_000, 11_000, 12_000],
+            }
+        )
+        provider = MarketDataProvider()
+
+        result = provider._normalize_akshare_daily_bars("600519", "2026-05-14", df)
+
+        self.assertEqual(result["dates"][-1], "2026-05-12")
+        self.assertEqual(result["actual_trade_date"], "2026-05-12")
+        self.assertTrue(result["date_adjusted"])
+        self.assertIn("最近可用交易日", result["date_adjust_reason"])
 
     def test_mock_data_contains_observability_metadata(self) -> None:
         provider = MarketDataProvider()
@@ -256,6 +325,26 @@ class MarketDataProviderTest(unittest.TestCase):
         self.assertEqual(len(result["dates"]), 20)
         self.assertEqual(result["dates"][0], "2026-04-25")
         self.assertEqual(result["dates"][-1], "2026-05-14")
+        self.assertEqual(result["requested_trade_date"], "2026-05-14")
+        self.assertEqual(result["actual_trade_date"], "2026-05-14")
+        self.assertFalse(result["date_adjusted"])
+
+    def test_normalize_tushare_daily_bars_records_adjusted_actual_trade_date(self) -> None:
+        df = pd.DataFrame(
+            {
+                "trade_date": ["20260516", "20260512", "20260510"],
+                "close": [102.0, 101.0, 100.0],
+                "vol": [12_000, 11_000, 10_000],
+            }
+        )
+        provider = MarketDataProvider()
+
+        result = provider._normalize_tushare_daily_bars("600519", "2026-05-14", df)
+
+        self.assertEqual(result["dates"][-1], "2026-05-12")
+        self.assertEqual(result["actual_trade_date"], "2026-05-12")
+        self.assertTrue(result["date_adjusted"])
+        self.assertIn("2026-05-14", result["date_adjust_reason"])
 
     def test_normalize_tushare_daily_bars_rejects_missing_required_columns(self) -> None:
         df = pd.DataFrame({"trade_date": ["20260514"], "close": [100.0]})

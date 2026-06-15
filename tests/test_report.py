@@ -55,6 +55,26 @@ class ReportTest(unittest.TestCase):
 
         self.assertIn("未找到可用行情数据", report)
 
+    def test_render_text_report_shows_market_actual_trade_date_adjustment(self) -> None:
+        state = AgentState(
+            symbol="AAPL",
+            trade_date="2026-06-15",
+            market_data={
+                "source": "alpha_vantage",
+                "requested_provider": "alpha_vantage",
+                "requested_trade_date": "2026-06-15",
+                "actual_trade_date": "2026-06-12",
+                "date_adjusted": True,
+                "date_adjust_reason": "目标日期 2026-06-15 无可用行情，已自动使用最近可用交易日 2026-06-12。",
+            },
+        )
+
+        report = render_text_report(state)
+
+        self.assertIn("请求行情日期: 2026-06-15", report)
+        self.assertIn("实际行情日期: 2026-06-12", report)
+        self.assertIn("行情日期调整: 目标日期 2026-06-15 无可用行情", report)
+
     def test_render_text_report_shows_news_source_metadata(self) -> None:
         state = AgentState(
             symbol="600519",
@@ -163,6 +183,67 @@ class ReportTest(unittest.TestCase):
         report = render_text_report(state)
 
         self.assertIn("风险控制来源: deepseek_guardrailed", report)
+
+    def test_render_text_report_shows_new_agent_sections(self) -> None:
+        from quantmind.schemas import (
+            FundamentalReport,
+            ResearchDebateReport,
+            ResearchPerspectiveReport,
+            SentimentReport,
+            Signal,
+        )
+
+        state = AgentState(
+            symbol="600519",
+            trade_date="2024-06-05",
+            fundamental_report=FundamentalReport(
+                signal=Signal.BULLISH,
+                score=78,
+                summary="ROE 较高且利润增长为正。",
+                metrics={"roe": 0.2},
+                data_source="unit_test",
+            ),
+            sentiment_report=SentimentReport(
+                sentiment=Signal.NEUTRAL,
+                score=50,
+                buzz_score=20,
+                disagreement_score=10,
+                summary="舆情中性。",
+                sources=["unit_test"],
+            ),
+            bullish_research_report=ResearchPerspectiveReport(
+                stance=Signal.BULLISH,
+                confidence=0.7,
+                thesis="多头证据较充分。",
+                key_points=["基本面偏多"],
+                concerns=["新闻样本有限"],
+            ),
+            bearish_research_report=ResearchPerspectiveReport(
+                stance=Signal.NEUTRAL,
+                confidence=0.4,
+                thesis="空头证据不足。",
+                key_points=[],
+                concerns=["缺少明确利空"],
+            ),
+            research_debate_report=ResearchDebateReport(
+                conclusion=Signal.BULLISH,
+                confidence=0.72,
+                bullish_summary="多头更强。",
+                bearish_summary="空头较弱。",
+                final_summary="研究经理认为偏多。",
+                key_evidence=["基本面偏多"],
+            ),
+        )
+
+        report = render_text_report(state)
+
+        self.assertIn("[基本面分析]", report)
+        self.assertIn("[舆情分析]", report)
+        self.assertIn("[多头研究员观点]", report)
+        self.assertIn("[空头研究员观点]", report)
+        self.assertIn("[研究经理结论]", report)
+        self.assertIn("ROE 较高", report)
+        self.assertIn("研究经理认为偏多", report)
 
 
 if __name__ == "__main__":

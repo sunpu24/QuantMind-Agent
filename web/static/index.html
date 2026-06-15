@@ -10,8 +10,8 @@
     <main class="hero-shell">
       <section class="hero-card">
         <p class="eyebrow">Multi-Agent Stock Intelligence</p>
-        <h1>QuantMind Agent</h1>
-        <p class="subtitle">输入 A 股或美股名称/代码，让四个 Agent 依次完成技术、新闻、风险与最终交易决策分析。</p>
+        <h1><span>QuantMind</span><span>Agent</span></h1>
+        <p class="subtitle">输入 A 股或美股名称/代码，自由选择基础分析 Agent，系统会继续完成研究、风险与最终交易决策。</p>
 
         <form id="searchForm" class="search-box">
           <input
@@ -23,6 +23,18 @@
           />
           <button type="submit">开始分析</button>
         </form>
+        <section class="agent-selector" aria-label="选择基础分析 Agent">
+          <div class="agent-selector-heading">
+            <span>选择要启用的基础分析</span>
+            <small>默认全选，可按需取消</small>
+          </div>
+          <div class="agent-options">
+            <label><input type="checkbox" name="agent" value="technical" checked /> 技术分析</label>
+            <label><input type="checkbox" name="agent" value="news" checked /> 新闻分析</label>
+            <label><input type="checkbox" name="agent" value="fundamental" checked /> 基本面分析</label>
+            <label><input type="checkbox" name="agent" value="sentiment" checked /> 舆情分析</label>
+          </div>
+        </section>
         <p id="errorText" class="error-text" aria-live="polite"></p>
 
         <div class="examples">

@@ -44,6 +44,12 @@ COMMON_SYMBOL_ALIASES: dict[str, tuple[str, str, str]] = {
 }
 
 
+COMMON_SYMBOLS_BY_CODE: dict[str, tuple[str, str]] = {
+    symbol.upper(): (display_name, market)
+    for symbol, display_name, market in COMMON_SYMBOL_ALIASES.values()
+}
+
+
 def resolve_symbol(query: str) -> ResolvedSymbol:
     """解析首页输入的股票名称、A 股代码或美股 ticker。
 
@@ -69,20 +75,22 @@ def resolve_symbol(query: str) -> ResolvedSymbol:
     normalized = raw.upper()
     if _is_a_share_symbol(normalized):
         symbol = normalized.split(".", maxsplit=1)[0]
+        display_name, market = COMMON_SYMBOLS_BY_CODE.get(symbol, (symbol, "A_SHARE"))
         return ResolvedSymbol(
             query=raw,
             symbol=symbol,
-            display_name=symbol,
-            market="A_SHARE",
+            display_name=display_name,
+            market=market,
             input_type="a_share_code",
         )
 
     if _is_us_symbol(normalized):
+        display_name, market = COMMON_SYMBOLS_BY_CODE.get(normalized, (normalized, "US"))
         return ResolvedSymbol(
             query=raw,
             symbol=normalized,
-            display_name=normalized,
-            market="US",
+            display_name=display_name,
+            market=market,
             input_type="us_ticker",
         )
 

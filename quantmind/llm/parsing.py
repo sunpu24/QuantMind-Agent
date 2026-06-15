@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from quantmind.schemas import NewsReport, RiskLevel, RiskReport, Signal, TechnicalReport, TradeAction, TradeDecision
+from quantmind.schemas import (
+    FundamentalReport,
+    NewsReport,
+    ResearchDebateReport,
+    ResearchPerspectiveReport,
+    RiskLevel,
+    RiskReport,
+    SentimentReport,
+    Signal,
+    TechnicalReport,
+    TradeAction,
+    TradeDecision,
+)
 
 
 def _to_float(value: Any, default: float) -> float:
@@ -59,6 +71,116 @@ def parse_technical_report_payload(
         score=score,
         summary=summary,
         indicators=dict(indicators),
+    )
+
+
+def parse_fundamental_report_payload(
+    payload: dict[str, Any],
+    *,
+    metrics: dict[str, Any],
+    data_source: str,
+) -> FundamentalReport:
+    signal_raw = str(payload.get("signal", Signal.NEUTRAL.value)).lower()
+    if signal_raw not in {item.value for item in Signal}:
+        signal_raw = Signal.NEUTRAL.value
+
+    score = max(0, min(_to_int(payload.get("score"), 50), 100))
+    summary = str(payload.get("summary") or "DeepSeek 给出基本面分析。")
+
+    return FundamentalReport(
+        signal=Signal(signal_raw),
+        score=score,
+        summary=summary,
+        metrics=dict(metrics),
+        data_source=data_source,
+    )
+
+
+def parse_sentiment_report_payload(payload: dict[str, Any]) -> SentimentReport:
+    sentiment_raw = str(payload.get("sentiment", Signal.NEUTRAL.value)).lower()
+    if sentiment_raw not in {item.value for item in Signal}:
+        sentiment_raw = Signal.NEUTRAL.value
+
+    score = max(0, min(_to_int(payload.get("score"), 50), 100))
+    buzz_score = max(0, min(_to_int(payload.get("buzz_score"), 10), 100))
+    disagreement_score = max(0, min(_to_int(payload.get("disagreement_score"), 10), 100))
+    summary = str(payload.get("summary") or "DeepSeek 给出市场情绪分析。")
+    sources_raw = payload.get("sources", [])
+    if isinstance(sources_raw, list):
+        sources = [str(item) for item in sources_raw if str(item).strip()]
+    elif sources_raw:
+        sources = [str(sources_raw)]
+    else:
+        sources = []
+
+    return SentimentReport(
+        sentiment=Signal(sentiment_raw),
+        score=score,
+        buzz_score=buzz_score,
+        disagreement_score=disagreement_score,
+        summary=summary,
+        sources=sources,
+    )
+
+
+def parse_research_perspective_report_payload(payload: dict[str, Any]) -> ResearchPerspectiveReport:
+    stance_raw = str(payload.get("stance", Signal.NEUTRAL.value)).lower()
+    if stance_raw not in {item.value for item in Signal}:
+        stance_raw = Signal.NEUTRAL.value
+
+    confidence = max(0.0, min(_to_float(payload.get("confidence"), 0.5), 0.95))
+    thesis = str(payload.get("thesis") or "多头研究员基于已有报告给出谨慎观点。")
+
+    key_points_raw = payload.get("key_points", [])
+    if isinstance(key_points_raw, list):
+        key_points = [str(item) for item in key_points_raw if str(item).strip()]
+    elif key_points_raw:
+        key_points = [str(key_points_raw)]
+    else:
+        key_points = []
+
+    concerns_raw = payload.get("concerns", [])
+    if isinstance(concerns_raw, list):
+        concerns = [str(item) for item in concerns_raw if str(item).strip()]
+    elif concerns_raw:
+        concerns = [str(concerns_raw)]
+    else:
+        concerns = []
+
+    return ResearchPerspectiveReport(
+        stance=Signal(stance_raw),
+        confidence=round(confidence, 2),
+        thesis=thesis,
+        key_points=key_points,
+        concerns=concerns,
+    )
+
+
+def parse_research_debate_report_payload(payload: dict[str, Any]) -> ResearchDebateReport:
+    conclusion_raw = str(payload.get("conclusion", Signal.NEUTRAL.value)).lower()
+    if conclusion_raw not in {item.value for item in Signal}:
+        conclusion_raw = Signal.NEUTRAL.value
+
+    confidence = max(0.0, min(_to_float(payload.get("confidence"), 0.5), 0.95))
+    bullish_summary = str(payload.get("bullish_summary") or "多头观点证据不足或未提供。")
+    bearish_summary = str(payload.get("bearish_summary") or "空头观点证据不足或未提供。")
+    final_summary = str(payload.get("final_summary") or "研究经理基于已有报告给出中性结论。")
+
+    key_evidence_raw = payload.get("key_evidence", [])
+    if isinstance(key_evidence_raw, list):
+        key_evidence = [str(item) for item in key_evidence_raw if str(item).strip()]
+    elif key_evidence_raw:
+        key_evidence = [str(key_evidence_raw)]
+    else:
+        key_evidence = []
+
+    return ResearchDebateReport(
+        conclusion=Signal(conclusion_raw),
+        confidence=round(confidence, 2),
+        bullish_summary=bullish_summary,
+        bearish_summary=bearish_summary,
+        final_summary=final_summary,
+        key_evidence=key_evidence,
     )
 
 

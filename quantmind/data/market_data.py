@@ -167,6 +167,7 @@ class MarketDataProvider:
         rows = sorted(rows, key=lambda item: item[0])[-self.BAR_LIMIT :]
         if not rows:
             raise ValueError(f"未获取到 {trade_date} 前的可用 Alpha Vantage 行情数据")
+        actual_trade_date = rows[-1][0]
 
         return {
             "symbol": self._to_alpha_vantage_symbol(symbol),
@@ -178,6 +179,10 @@ class MarketDataProvider:
             "fallback_reason": None,
             "fallback_type": None,
             "market": "US",
+            "requested_trade_date": trade_date,
+            "actual_trade_date": actual_trade_date,
+            "date_adjusted": actual_trade_date != trade_date,
+            "date_adjust_reason": self._build_date_adjust_reason(trade_date, actual_trade_date),
         }
 
     @staticmethod
@@ -305,6 +310,7 @@ class MarketDataProvider:
 
         if data.empty:
             raise ValueError(f"未获取到 {trade_date} 前的可用行情数据")
+        actual_trade_date = self._format_akshare_date(str(data["日期"].iloc[-1]))
 
         return {
             "symbol": symbol,
@@ -315,6 +321,10 @@ class MarketDataProvider:
             "requested_provider": "akshare",
             "fallback_reason": None,
             "fallback_type": None,
+            "requested_trade_date": trade_date,
+            "actual_trade_date": actual_trade_date,
+            "date_adjusted": actual_trade_date != trade_date,
+            "date_adjust_reason": self._build_date_adjust_reason(trade_date, actual_trade_date),
         }
 
     @staticmethod
@@ -428,6 +438,7 @@ class MarketDataProvider:
 
         if data.empty:
             raise ValueError(f"未获取到 {trade_date} 前的可用 Tushare 行情数据")
+        actual_trade_date = self._format_tushare_date(str(data["trade_date"].iloc[-1]))
 
         return {
             "symbol": symbol,
@@ -439,7 +450,17 @@ class MarketDataProvider:
             "fallback_reason": None,
             "fallback_type": None,
             "tushare_ts_code": self._to_tushare_ts_code(symbol),
+            "requested_trade_date": trade_date,
+            "actual_trade_date": actual_trade_date,
+            "date_adjusted": actual_trade_date != trade_date,
+            "date_adjust_reason": self._build_date_adjust_reason(trade_date, actual_trade_date),
         }
+
+    @staticmethod
+    def _build_date_adjust_reason(requested_trade_date: str, actual_trade_date: str) -> str | None:
+        if actual_trade_date == requested_trade_date:
+            return None
+        return f"目标日期 {requested_trade_date} 无可用行情，已自动使用最近可用交易日 {actual_trade_date}。"
 
     @staticmethod
     def _to_tushare_ts_code(symbol: str) -> str:
