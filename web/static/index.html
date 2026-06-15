@@ -26,13 +26,31 @@
         <section class="agent-selector" aria-label="选择基础分析 Agent">
           <div class="agent-selector-heading">
             <span>选择要启用的基础分析</span>
-            <small>默认全选，可按需取消</small>
+            <div class="agent-actions" aria-label="Agent 快捷操作">
+              <button type="button" id="selectAllAgents" class="ghost-button">全选</button>
+              <button type="button" id="clearAgents" class="ghost-button">清空</button>
+            </div>
           </div>
           <div class="agent-options">
             <label><input type="checkbox" name="agent" value="technical" checked /> 技术分析</label>
             <label><input type="checkbox" name="agent" value="news" checked /> 新闻分析</label>
             <label><input type="checkbox" name="agent" value="fundamental" checked /> 基本面分析</label>
             <label><input type="checkbox" name="agent" value="sentiment" checked /> 舆情分析</label>
+          </div>
+        </section>
+
+        <section class="compare-entry-panel" aria-label="股票对比分析">
+          <div class="compare-entry-heading">
+            <div>
+              <span>股票对比分析</span>
+              <small>输入 2～3 只股票，逐只运行 Agent 后生成横向对比。</small>
+            </div>
+            <button type="button" id="startCompareButton" class="ghost-button">开始对比</button>
+          </div>
+          <div class="compare-input-grid">
+            <input id="compareInputA" type="text" autocomplete="off" placeholder="股票 A：贵州茅台 / 600519" />
+            <input id="compareInputB" type="text" autocomplete="off" placeholder="股票 B：宁德时代 / 300750" />
+            <input id="compareInputC" type="text" autocomplete="off" placeholder="股票 C：可选" />
           </div>
         </section>
         <p id="errorText" class="error-text" aria-live="polite"></p>
@@ -44,6 +62,26 @@
           <button data-query="AAPL">AAPL</button>
           <button data-query="特斯拉">特斯拉</button>
         </div>
+
+        <section id="recentSearches" class="recent-searches hidden" aria-label="最近分析">
+          <div class="recent-heading">
+            <span>最近分析</span>
+            <button type="button" id="clearRecentSearches" class="ghost-button">清除</button>
+          </div>
+          <div id="recentSearchList" class="recent-list"></div>
+        </section>
+
+        <section class="watchlist-panel" aria-label="自选股">
+          <div class="watchlist-heading">
+            <div>
+              <span>Watchlist 自选股</span>
+              <small>本地保存，随时一键分析</small>
+            </div>
+            <button type="button" id="addWatchlistButton" class="ghost-button">加入当前输入</button>
+          </div>
+          <div id="watchlistEmpty" class="watchlist-empty">还没有自选股。输入股票并点击“加入当前输入”开始收藏。</div>
+          <div id="watchlistItems" class="watchlist-list"></div>
+        </section>
       </section>
     </main>
 

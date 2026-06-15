@@ -31,21 +31,44 @@
           <li data-step="risk">风险控制 Agent</li>
           <li data-step="decision">交易决策 Agent</li>
         </ol>
+        <section class="workflow-log" aria-label="分析过程日志">
+          <div class="log-heading">
+            <span>实时日志</span>
+            <small id="logCount">0 条事件</small>
+          </div>
+          <div id="eventLog" class="log-list" aria-live="polite"></div>
+        </section>
       </section>
 
       <section id="resultPanel" class="results hidden">
+        <div class="result-toolbar" aria-label="结果页快捷操作">
+          <span>Agent 卡片视图</span>
+          <div class="agent-actions">
+            <button type="button" id="expandAllAgentCards" class="ghost-button">全部展开</button>
+            <button type="button" id="collapseAllAgentCards" class="ghost-button">全部收起</button>
+          </div>
+        </div>
         <article class="panel decision-card">
           <div class="card-heading">
-            <p class="eyebrow">Final Decision</p>
+            <div>
+              <p class="eyebrow">Final Decision</p>
+              <h2 id="decisionSummary">等待最终结论</h2>
+            </div>
             <span id="decisionBadge" class="badge">WAIT</span>
           </div>
-          <h2 id="decisionSummary">等待最终结论</h2>
+          <div class="report-actions" aria-label="报告操作">
+            <button type="button" id="saveWatchlistButton" class="secondary-button">加入自选</button>
+            <button type="button" id="copyReportButton" class="secondary-button">复制报告</button>
+            <button type="button" id="downloadReportButton" class="secondary-button">导出 Markdown</button>
+            <span id="reportActionStatus" class="action-status" aria-live="polite"></span>
+          </div>
           <div class="metric-grid">
             <div><span>置信度</span><strong id="confidence">-</strong></div>
             <div><span>建议仓位</span><strong id="positionSize">-</strong></div>
             <div><span>决策来源</span><strong id="decisionSource">-</strong></div>
             <div><span>分析日期</span><strong id="tradeDate">-</strong></div>
           </div>
+          <section id="decisionScorePanel" class="decision-score-panel" aria-label="决策评分可视化"></section>
           <p id="riskNotes" class="muted"></p>
         </article>
 

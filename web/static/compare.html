@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuantMind 股票对比分析</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="analysis-shell compare-shell">
+      <a class="back-link" href="/">← 返回首页</a>
+
+      <section class="panel progress-panel compare-hero-panel">
+        <div>
+          <p class="eyebrow">Stock Compare</p>
+          <h1 id="compareTitle">股票对比分析</h1>
+          <p id="compareStatus" class="subtitle">系统将逐只运行 QuantMind Agent，并生成横向对比视图。</p>
+        </div>
+        <div class="progress-track">
+          <div id="compareProgressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <div id="compareProgressCards" class="compare-progress-grid"></div>
+      </section>
+
+      <section id="compareResultPanel" class="results hidden">
+        <article class="panel decision-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Compare Summary</p>
+              <h2>对比结论摘要</h2>
+            </div>
+            <span id="compareCompletedBadge" class="badge">WAIT</span>
+          </div>
+          <div id="compareSummaryCards" class="compare-summary-grid"></div>
+        </article>
+
+        <section class="agent-section">
+          <div class="section-heading">
+            <p class="eyebrow">Overview Matrix</p>
+            <h2>横向指标对比</h2>
+            <p class="section-subtitle">按最终决策、风险、市场信号和建议仓位进行快速比较。</p>
+          </div>
+          <article class="panel compare-table-panel">
+            <div id="compareTable" class="compare-table-wrap"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

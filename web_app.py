@@ -35,6 +35,11 @@ def analysis() -> FileResponse:
     return FileResponse(STATIC_DIR / "analysis.html")
 
 
+@app.get("/compare")
+def compare() -> FileResponse:
+    return FileResponse(STATIC_DIR / "compare.html")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
