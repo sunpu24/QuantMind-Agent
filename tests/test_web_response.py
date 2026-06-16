@@ -5,6 +5,8 @@ import unittest
 from quantmind.schemas import (
     AgentState,
     FundamentalReport,
+    MarketRegime,
+    MarketRegimeReport,
     ResearchDebateReport,
     ResearchPerspectiveReport,
     SentimentReport,
@@ -20,6 +22,13 @@ class WebResponseTest(unittest.TestCase):
             trade_date="2024-06-05",
             fundamental_data={"metrics": {"roe": 0.2}},
             sentiment_data={"source": "news_data"},
+            market_regime_report=MarketRegimeReport(
+                regime=MarketRegime.SIDEWAYS,
+                volatility=0.01,
+                trend_strength=0.02,
+                max_drawdown=-0.03,
+                summary="近期震荡。",
+            ),
             fundamental_report=FundamentalReport(
                 signal=Signal.BULLISH,
                 score=78,
@@ -65,6 +74,7 @@ class WebResponseTest(unittest.TestCase):
         self.assertEqual(payload["sentiment_data"], {"source": "news_data"})
         self.assertEqual(payload["fundamental_report"]["signal"], "bullish")
         self.assertEqual(payload["sentiment_report"]["sentiment"], "neutral")
+        self.assertEqual(payload["market_regime_report"]["regime"], "sideways")
         self.assertEqual(payload["bullish_research_report"]["stance"], "bullish")
         self.assertEqual(payload["bearish_research_report"]["stance"], "neutral")
         self.assertEqual(payload["research_debate_report"]["conclusion"], "bullish")

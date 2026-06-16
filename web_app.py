@@ -137,6 +137,7 @@ def _state_to_response(state: AgentState) -> dict[str, Any]:
         "news_report": _serialize(state.news_report),
         "fundamental_report": _serialize(state.fundamental_report),
         "sentiment_report": _serialize(state.sentiment_report),
+        "market_regime_report": _serialize(state.market_regime_report),
         "bullish_research_report": _serialize(state.bullish_research_report),
         "bearish_research_report": _serialize(state.bearish_research_report),
         "research_debate_report": _serialize(state.research_debate_report),

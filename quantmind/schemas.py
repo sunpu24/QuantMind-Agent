@@ -17,6 +17,14 @@ class RiskLevel(str, Enum):
     HIGH = "high"
 
 
+class MarketRegime(str, Enum):
+    UPTREND = "uptrend"
+    DOWNTREND = "downtrend"
+    SIDEWAYS = "sideways"
+    HIGH_VOLATILITY = "high_volatility"
+    INSUFFICIENT_DATA = "insufficient_data"
+
+
 class TradeAction(str, Enum):
     BUY = "BUY"
     HOLD = "HOLD"
@@ -89,6 +97,15 @@ class RiskReport:
 
 
 @dataclass
+class MarketRegimeReport:
+    regime: MarketRegime
+    volatility: float
+    trend_strength: float
+    max_drawdown: float
+    summary: str
+
+
+@dataclass
 class TradeDecision:
     action: TradeAction
     confidence: float
@@ -104,6 +121,9 @@ class TradeDecision:
     llm_fallback_type: Optional[str] = None
     llm_prompt_summary: str = ""
     llm_response_summary: str = ""
+    weighted_score: float = 0.0
+    contribution_breakdown: dict[str, float] = field(default_factory=dict)
+    regime_adjustment: str = ""
 
 
 @dataclass
@@ -118,6 +138,7 @@ class AgentState:
     news_report: Optional[NewsReport] = None
     fundamental_report: Optional[FundamentalReport] = None
     sentiment_report: Optional[SentimentReport] = None
+    market_regime_report: Optional[MarketRegimeReport] = None
     bullish_research_report: Optional[ResearchPerspectiveReport] = None
     bearish_research_report: Optional[ResearchPerspectiveReport] = None
     research_debate_report: Optional[ResearchDebateReport] = None

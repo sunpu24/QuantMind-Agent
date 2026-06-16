@@ -7,6 +7,8 @@ from quantmind.agents.decision_agent import TradingDecisionAgent
 from quantmind.schemas import (
     AgentState,
     FundamentalReport,
+    MarketRegime,
+    MarketRegimeReport,
     NewsReport,
     ResearchDebateReport,
     RiskLevel,
@@ -24,6 +26,13 @@ def _state() -> AgentState:
         trade_date="2024-06-05",
         market_data={"source": "tushare"},
         news_data=[{"news_source": "alpha_vantage", "news_fallback_type": None}],
+        market_regime_report=MarketRegimeReport(
+            regime=MarketRegime.UPTREND,
+            volatility=0.012,
+            trend_strength=0.08,
+            max_drawdown=-0.02,
+            summary="近期价格呈上行趋势。",
+        ),
         technical_report=TechnicalReport(
             signal=Signal.BULLISH,
             score=78,
@@ -35,6 +44,12 @@ def _state() -> AgentState:
             score=55,
             summary="新闻中性。",
             headlines=["新闻标题"],
+        ),
+        fundamental_report=FundamentalReport(
+            signal=Signal.BULLISH,
+            score=72,
+            summary="基本面偏多。",
+            metrics={"roe": 0.2},
         ),
         risk_report=RiskReport(
             level=RiskLevel.MEDIUM,
@@ -57,6 +72,7 @@ class TradingDecisionAgentTest(unittest.TestCase):
 
         self.assertEqual(result.final_decision.action, TradeAction.BUY)
         self.assertEqual(result.final_decision.decision_source, "rule")
+        self.assertGreater(result.final_decision.weighted_score, 0.25)
 
     def test_deepseek_decision_uses_structured_payload_and_guardrails(self) -> None:
         agent = TradingDecisionAgent()
@@ -86,8 +102,11 @@ class TradingDecisionAgentTest(unittest.TestCase):
         self.assertIsNotNone(decision.llm_elapsed_ms)
         self.assertIn("symbol=600519", decision.llm_prompt_summary)
         self.assertIn("tech=bullish/78", decision.llm_prompt_summary)
+        self.assertIn("market_regime=uptrend", decision.llm_prompt_summary)
+        self.assertIn("weighted_score=", decision.llm_prompt_summary)
         self.assertIn("action=BUY", decision.llm_response_summary)
         self.assertIn("position_size=0.9", decision.llm_response_summary)
+        self.assertIn("technical", decision.contribution_breakdown)
 
     def test_deepseek_missing_key_falls_back_to_rule(self) -> None:
         agent = TradingDecisionAgent()
@@ -136,6 +155,7 @@ class TradingDecisionAgentTest(unittest.TestCase):
         self.assertLessEqual(result.final_decision.confidence, 0.55)
         self.assertIn("未找到可用行情数据", result.final_decision.summary)
         self.assertNotIn("占位", result.final_decision.summary)
+        self.assertIn("强制覆盖为 WAIT", result.final_decision.regime_adjustment)
 
     def test_rule_decision_uses_wait_for_conflicting_or_insufficient_signals(self) -> None:
         agent = TradingDecisionAgent()
@@ -150,6 +170,7 @@ class TradingDecisionAgentTest(unittest.TestCase):
 
         self.assertEqual(result.final_decision.action, TradeAction.WAIT)
         self.assertEqual(result.final_decision.position_size, 0.0)
+        self.assertLess(result.final_decision.weighted_score, 0.25)
 
     def test_deepseek_prompt_contains_wait_action_rules(self) -> None:
         agent = TradingDecisionAgent()
@@ -157,6 +178,8 @@ class TradingDecisionAgentTest(unittest.TestCase):
 
         self.assertIn("BUY/HOLD/WAIT/SELL", messages[1]["content"])
         self.assertIn("WAIT=观望等待", messages[1]["content"])
+        self.assertIn("market_regime", messages[1]["content"])
+        self.assertIn("contribution_breakdown", messages[1]["content"])
 
     def test_deepseek_prompt_treats_missing_news_as_neutral_and_forbids_fabrication(self) -> None:
         agent = TradingDecisionAgent()
@@ -170,6 +193,7 @@ class TradingDecisionAgentTest(unittest.TestCase):
         self.assertIn("只能依赖技术分析、新闻分析和风险控制报告", combined)
         self.assertIn("没有找到相关的新闻", combined)
         self.assertIn("不得编造新闻", combined)
+        self.assertIn("不要给出激进 BUY", combined)
 
     def test_rule_decision_uses_research_debate_as_important_signal(self) -> None:
         agent = TradingDecisionAgent()
@@ -183,11 +207,11 @@ class TradingDecisionAgentTest(unittest.TestCase):
             metrics={},
         )
         state.sentiment_report = SentimentReport(
-            sentiment=Signal.NEUTRAL,
-            score=50,
+            sentiment=Signal.BULLISH,
+            score=65,
             buzz_score=20,
             disagreement_score=20,
-            summary="舆情中性。",
+            summary="舆情偏多。",
             sources=[],
         )
         state.research_debate_report = ResearchDebateReport(
@@ -205,7 +229,7 @@ class TradingDecisionAgentTest(unittest.TestCase):
             result = agent.run(state)
 
         self.assertEqual(result.final_decision.action, TradeAction.BUY)
-        self.assertIn("研究经理", result.final_decision.summary)
+        self.assertIn("研究结论", result.final_decision.regime_adjustment)
 
     def test_high_risk_blocks_bullish_research_buy(self) -> None:
         agent = TradingDecisionAgent()
@@ -233,6 +257,56 @@ class TradingDecisionAgentTest(unittest.TestCase):
 
         self.assertNotEqual(result.final_decision.action, TradeAction.BUY)
         self.assertEqual(result.final_decision.position_size, 0.0)
+
+    def test_high_volatility_raises_risk_weight_and_caps_buy_position(self) -> None:
+        agent = TradingDecisionAgent()
+        state = _state()
+        state.market_regime_report = MarketRegimeReport(
+            regime=MarketRegime.HIGH_VOLATILITY,
+            volatility=0.041,
+            trend_strength=0.03,
+            max_drawdown=-0.13,
+            summary="近期波动较高或回撤较大。",
+        )
+        state.news_report.sentiment = Signal.BULLISH
+        state.fundamental_report = FundamentalReport(signal=Signal.BULLISH, score=80, summary="基本面偏多。", metrics={})
+        state.sentiment_report = SentimentReport(
+            sentiment=Signal.BULLISH,
+            score=70,
+            buzz_score=60,
+            disagreement_score=10,
+            summary="舆情偏多。",
+            sources=[],
+        )
+        state.research_debate_report = ResearchDebateReport(
+            conclusion=Signal.BULLISH,
+            confidence=0.78,
+            bullish_summary="多头证据充分。",
+            bearish_summary="空头证据较弱。",
+            final_summary="研究经理偏多。",
+            key_evidence=[],
+        )
+        state.risk_report.level = RiskLevel.LOW
+        state.risk_report.suggested_position = 0.35
+
+        with patch("quantmind.agents.decision_agent.settings") as mock_settings:
+            mock_settings.llm_provider = "mock"
+            mock_settings.llm_model = "deepseek-chat"
+            result = agent.run(state)
+
+        self.assertEqual(result.final_decision.action, TradeAction.BUY)
+        self.assertLessEqual(result.final_decision.position_size, 0.15)
+        self.assertAlmostEqual(result.final_decision.contribution_breakdown["risk_penalty"], -0.034)
+        self.assertIn("风险控制权重至 34%", result.final_decision.regime_adjustment)
+
+    def test_contribution_breakdown_contains_all_expected_keys(self) -> None:
+        agent = TradingDecisionAgent()
+        decision = agent._make_rule_decision(_state())
+
+        self.assertEqual(
+            set(decision.contribution_breakdown),
+            {"technical", "news", "fundamental", "sentiment", "research", "risk_penalty"},
+        )
 
 
 if __name__ == "__main__":

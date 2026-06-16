@@ -25,6 +25,7 @@
           <li data-step="news">新闻分析 Agent</li>
           <li data-step="fundamental">基本面分析 Agent</li>
           <li data-step="sentiment">舆情分析 Agent</li>
+          <li data-step="market_regime">市场状态识别 Agent</li>
           <li data-step="bullish_research">多头研究员 Agent</li>
           <li data-step="bearish_research">空头研究员 Agent</li>
           <li data-step="research_manager">研究经理 Agent</li>
@@ -69,8 +70,11 @@
             <div><span>分析日期</span><strong id="tradeDate">-</strong></div>
           </div>
           <section id="decisionScorePanel" class="decision-score-panel" aria-label="决策评分可视化"></section>
+          <section id="decisionContributionPanel" class="decision-contribution-panel" aria-label="动态权重贡献度"></section>
           <p id="riskNotes" class="muted"></p>
         </article>
+
+        <article class="panel detail-card agent-card agent-regime" id="marketRegimeCard"></article>
 
         <section class="agent-section" id="marketSignalsSection">
           <div class="section-heading">

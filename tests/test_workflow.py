@@ -65,6 +65,7 @@ class QuantMindWorkflowTest(unittest.TestCase):
         self.assertIsNotNone(state.news_report)
         self.assertIsNotNone(state.fundamental_report)
         self.assertIsNotNone(state.sentiment_report)
+        self.assertIsNotNone(state.market_regime_report)
         self.assertIsNotNone(state.bullish_research_report)
         self.assertIsNotNone(state.bearish_research_report)
         self.assertIsNotNone(state.research_debate_report)
@@ -114,6 +115,7 @@ class QuantMindWorkflowTest(unittest.TestCase):
                 "news",
                 "fundamental",
                 "sentiment",
+                "market_regime",
                 "bullish_research",
                 "bearish_research",
                 "research_manager",
@@ -173,6 +175,7 @@ class QuantMindWorkflowTest(unittest.TestCase):
         self.assertIsNotNone(state.news_report)
         self.assertIsNone(state.fundamental_report)
         self.assertIsNone(state.sentiment_report)
+        self.assertIsNotNone(state.market_regime_report)
         self.assertIsNotNone(state.bullish_research_report)
         self.assertIsNotNone(state.bearish_research_report)
         self.assertIsNotNone(state.research_debate_report)
@@ -216,6 +219,7 @@ class QuantMindWorkflowTest(unittest.TestCase):
                 "prepared",
                 "technical",
                 "news",
+                "market_regime",
                 "bullish_research",
                 "bearish_research",
                 "research_manager",

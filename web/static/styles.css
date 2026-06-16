@@ -917,6 +917,67 @@ button:disabled {
 .agent-bearish { --agent-color: #fb7185; }
 .agent-manager { --agent-color: #facc15; }
 .agent-risk { --agent-color: #ff7a59; }
+.agent-regime { --agent-color: #22d3ee; }
+
+.decision-contribution-panel {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.contribution-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.contribution-heading span {
+  max-width: 420px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.contribution-list {
+  display: grid;
+  gap: 10px;
+}
+
+.contribution-row {
+  display: grid;
+  gap: 7px;
+}
+
+.contribution-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 900;
+}
+
+.contribution-positive strong { color: #67ffd8; }
+.contribution-negative strong { color: #ff98a4; }
+
+.contribution-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.contribution-track div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38d6b4, #55a7ff);
+}
+
+.contribution-negative .contribution-track div {
+  background: linear-gradient(90deg, #ff6b7a, #ffb86b);
+}
 
 .agent-header {
   position: relative;

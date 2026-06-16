@@ -1,7 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const OPTIONAL_ANALYSIS_AGENTS = ["technical", "news", "fundamental", "sentiment"];
-const ALWAYS_ON_STEPS = ["resolved", "prepared", "bullish_research", "bearish_research", "research_manager", "risk", "decision"];
+const ALWAYS_ON_STEPS = ["resolved", "prepared", "market_regime", "bullish_research", "bearish_research", "research_manager", "risk", "decision"];
 const RECENT_SEARCHES_KEY = "quantmind.recentSearches";
 const WATCHLIST_KEY = "quantmind.watchlist";
 let latestAnalysisResult = null;
@@ -608,6 +608,7 @@ function updateProgress(payload) {
     "news",
     "fundamental",
     "sentiment",
+     "market_regime",
     "bullish_research",
     "bearish_research",
     "research_manager",
@@ -650,6 +651,8 @@ function renderResult(data, selectedAgents = OPTIONAL_ANALYSIS_AGENTS) {
   $("#riskNotes").textContent = decision.risk_notes || "";
   $("#disclaimer").textContent = data.disclaimer || "";
   renderDecisionScorePanel(data, selectedAgents);
+  renderDecisionContributionPanel(decision);
+  renderMarketRegimeCard(data.market_regime_report || {});
 
   toggleCard("#technicalCard", selectedAgents.includes("technical"));
   toggleCard("#newsCard", selectedAgents.includes("news"));
@@ -689,6 +692,38 @@ function renderDecisionScorePanel(data, selectedAgents = OPTIONAL_ANALYSIS_AGENT
     </div>
     <div class="score-bars" aria-label="决策评分明细">
       ${model.bars.map(renderDecisionScoreBar).join("")}
+    </div>
+  `;
+}
+
+function renderDecisionContributionPanel(decision = {}) {
+  const panel = $("#decisionContributionPanel");
+  if (!panel) return;
+  const breakdown = decision.contribution_breakdown || {};
+  const entries = Object.entries(breakdown);
+  const maxAbs = Math.max(0.01, ...entries.map(([, value]) => Math.abs(Number(value) || 0)));
+  panel.innerHTML = `
+    <div class="contribution-heading">
+      <div>
+        <p class="eyebrow">Dynamic Weighting</p>
+        <h3>动态加权评分：${escapeHtml(formatSignedNumber(decision.weighted_score))}</h3>
+      </div>
+      <span>${escapeHtml(decision.regime_adjustment || "暂无市场状态调整说明")}</span>
+    </div>
+    <div class="contribution-list">
+      ${entries.map(([key, value]) => renderContributionRow(key, value, maxAbs)).join("") || '<p class="muted">暂无贡献度明细</p>'}
+    </div>
+  `;
+}
+
+function renderContributionRow(key, value, maxAbs) {
+  const number = Number(value) || 0;
+  const width = Math.round(Math.min(100, Math.abs(number) / maxAbs * 100));
+  const tone = number < 0 ? "negative" : "positive";
+  return `
+    <div class="contribution-row contribution-${tone}">
+      <div class="contribution-label"><span>${escapeHtml(formatContributionLabel(key))}</span><strong>${escapeHtml(formatSignedNumber(number))}</strong></div>
+      <div class="contribution-track"><div style="width: ${width}%"></div></div>
     </div>
   `;
 }
@@ -1017,6 +1052,21 @@ function renderRiskCard(report) {
   `;
 }
 
+function renderMarketRegimeCard(report) {
+  const card = $("#marketRegimeCard");
+  if (!card) return;
+  card.innerHTML = `
+    ${renderAgentHeader("🌡️", "Market Regime Agent", "市场状态", report.regime || "-")}
+    ${renderMetricPills([
+      ["市场状态", report.regime || "-"],
+      ["波动率", formatPercent(report.volatility)],
+      ["趋势强度", formatPercent(report.trend_strength)],
+      ["最大回撤", formatPercent(report.max_drawdown)],
+    ])}
+    <p class="agent-summary thesis">${escapeHtml(report.summary || "暂无市场状态解释")}</p>
+  `;
+}
+
 function renderAgentHeader(icon, eyebrow, title, tag) {
   return `
     <div class="agent-header">
@@ -1078,6 +1128,23 @@ function formatDisplayValue(value) {
   if (value === undefined || value === null || value === "") return "-";
   if (typeof value === "object") return JSON.stringify(value);
   return value;
+}
+
+function formatSignedNumber(value) {
+  const number = Number(value);
+  if (Number.isNaN(number)) return "-";
+  return `${number >= 0 ? "+" : ""}${number.toFixed(4)}`;
+}
+
+function formatContributionLabel(key) {
+  return {
+    technical: "技术分析",
+    news: "新闻情绪",
+    fundamental: "基本面",
+    sentiment: "舆情",
+    research: "研究经理",
+    risk_penalty: "风险惩罚",
+  }[key] || key;
 }
 
 function formatPercent(value) {

@@ -4,6 +4,7 @@ from quantmind.agents import (
     BearishResearchAgent,
     BullishResearchAgent,
     FundamentalAnalysisAgent,
+    MarketRegimeAgent,
     NewsAnalysisAgent,
     ResearchManagerAgent,
     RiskControlAgent,
@@ -33,6 +34,7 @@ class QuantMindWorkflow:
         self.news_agent = NewsAnalysisAgent()
         self.fundamental_agent = FundamentalAnalysisAgent()
         self.sentiment_agent = SentimentAnalysisAgent()
+        self.market_regime_agent = MarketRegimeAgent()
         self.bullish_research_agent = BullishResearchAgent()
         self.bearish_research_agent = BearishResearchAgent()
         self.research_manager_agent = ResearchManagerAgent()
@@ -56,6 +58,7 @@ class QuantMindWorkflow:
             state = self.fundamental_agent.run(state)
         if "sentiment" in enabled_agents:
             state = self.sentiment_agent.run(state)
+        state = self.market_regime_agent.run(state)
         state = self.bullish_research_agent.run(state)
         state = self.bearish_research_agent.run(state)
         state = self.research_manager_agent.run(state)
@@ -77,6 +80,7 @@ class QuantMindWorkflow:
         )
         steps = [
             *(step for step in ("technical", "news", "fundamental", "sentiment") if step in enabled_agents),
+            "market_regime",
             "bullish_research",
             "bearish_research",
             "research_manager",
@@ -108,6 +112,10 @@ class QuantMindWorkflow:
             state = self.sentiment_agent.run(state)
             completed_steps += 1
             yield self._progress_event("sentiment", self._progress_percent(completed_steps, total_steps), "舆情分析 Agent 已完成", state)
+
+        state = self.market_regime_agent.run(state)
+        completed_steps += 1
+        yield self._progress_event("market_regime", self._progress_percent(completed_steps, total_steps), "市场状态识别 Agent 已完成", state)
 
         state = self.bullish_research_agent.run(state)
         completed_steps += 1
